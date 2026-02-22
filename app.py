@@ -281,20 +281,24 @@ if st.session_state.step == 1:
             height=220,
         )
 
-        api_key = st.text_input("Anthropic API Key", type="password", placeholder="sk-ant-...",
-                                help="Required for AI question generation and feedback")
-
         col_btn, col_info = st.columns([1, 3])
         start = col_btn.button("Generate Questions →", type="primary",
                                disabled=not job_desc.strip(), use_container_width=True)
         if not job_desc.strip():
             col_info.markdown('<p style="color:#999;font-size:0.85rem;margin-top:8px">Paste a job description to get started</p>', unsafe_allow_html=True)
+        api_key = ""
 
         st.markdown('</div>', unsafe_allow_html=True)
 
         if start and job_desc.strip():
+            import os
+            # Load API key from Streamlit secrets (set in Streamlit Cloud dashboard)
+            try:
+                api_key = st.secrets["ANTHROPIC_API_KEY"]
+            except:
+                api_key = os.environ.get("ANTHROPIC_API_KEY", "")
             if api_key:
-                import os; os.environ["ANTHROPIC_API_KEY"] = api_key
+                os.environ["ANTHROPIC_API_KEY"] = api_key
                 st.session_state.api_key = api_key
 
             with st.spinner("Analysing job description..."):
@@ -473,8 +477,8 @@ elif st.session_state.step == 2:
 
             st.divider()
             label = "Next Question →" if idx + 1 < total else "See My Results →"
-            if st.button(label, type="primary"):
-                st.session_state.current_q_idx += 1
+            if st.button(label, type="primary", key=f"next_{idx}"):
+                st.session_state.current_q_idx = idx + 1
                 st.rerun()
 
         if skip:
