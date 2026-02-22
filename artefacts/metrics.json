@@ -1,0 +1,46 @@
+{
+  "best_model": "LogisticRegression (C=0.1)",
+  "cv_results": {
+    "LogisticRegression (C=0.1)": {
+      "mean_val_accuracy": 1.0,
+      "mean_val_f1": 1.0,
+      "std_val_accuracy": 0.0
+    },
+    "LogisticRegression (C=1.0)": {
+      "mean_val_accuracy": 1.0,
+      "mean_val_f1": 1.0,
+      "std_val_accuracy": 0.0
+    },
+    "RandomForest (n=100)": {
+      "mean_val_accuracy": 1.0,
+      "mean_val_f1": 1.0,
+      "std_val_accuracy": 0.0
+    },
+    "RandomForest (n=200)": {
+      "mean_val_accuracy": 1.0,
+      "mean_val_f1": 1.0,
+      "std_val_accuracy": 0.0
+    }
+  },
+  "test_accuracy": 1.0,
+  "test_f1_weighted": 1.0,
+  "classes": [
+    "good",
+    "strong",
+    "weak"
+  ],
+  "feature_cols": [
+    "word_count",
+    "avg_sentence_len",
+    "has_example",
+    "has_numbers",
+    "uses_first_person",
+    "lexical_richness",
+    "star_score",
+    "sentence_count",
+    "is_very_short",
+    "question_type",
+    "answer_length_cat",
+    "answer_text"
+  ]
+}
