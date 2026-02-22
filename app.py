@@ -222,9 +222,13 @@ section[data-testid="stSidebar"] { display: none; }
 
 # ── NAVBAR ──────────────────────────────────────────────────
 st.markdown("""
-<div class="li-nav">
-    <span class="li-nav-logo">in</span>
-    <span class="li-nav-feature">Smart Interview Prep <span style="background:#0a66c2;color:white;border-radius:4px;padding:2px 8px;font-size:0.7rem;margin-left:6px">AI</span></span>
+<div style="background:#ffffff;border-bottom:1px solid #e0e0e0;padding:12px 24px;
+            display:flex;align-items:center;gap:16px;margin-bottom:16px">
+    <span style="font-size:1.8rem;font-weight:900;color:#0a66c2;letter-spacing:-1px;line-height:1">in</span>
+    <span style="color:#666;font-size:0.85rem;border-left:1px solid #e0e0e0;padding-left:16px">
+        Smart Interview Prep &nbsp;
+        <span style="background:#0a66c2;color:white;border-radius:4px;padding:2px 8px;font-size:0.7rem">AI ✨</span>
+    </span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -330,16 +334,6 @@ if st.session_state.step == 1:
             st.rerun()
 
     with col_side:
-        st.markdown("""
-        <div class="li-card" style="font-size:0.85rem;color:#444;line-height:1.8">
-            <div style="font-weight:700;color:#1a1a1a;margin-bottom:10px">Why this is better</div>
-            <div style="color:#dc2626;margin-bottom:6px">❌ Current LinkedIn Interview Prep</div>
-            <div style="color:#666;margin-bottom:12px;font-size:0.8rem">Shows the same generic questions to every candidate regardless of the role</div>
-            <div style="color:#057642;margin-bottom:6px">✅ This AI Upgrade</div>
-            <div style="color:#666;font-size:0.8rem">Reads the actual job description and generates questions specific to this role, company, and required skills</div>
-        </div>
-        """, unsafe_allow_html=True)
-
         if st.session_state.keywords:
             st.markdown('<div class="li-card">', unsafe_allow_html=True)
             st.markdown('<div style="font-weight:700;font-size:0.85rem;margin-bottom:8px">Detected Skills</div>', unsafe_allow_html=True)
@@ -374,12 +368,14 @@ elif st.session_state.step == 2:
         st.markdown(f'<p style="font-size:0.8rem;color:#666;margin-bottom:16px">Question {idx+1} of {total} · {st.session_state.job_title or "Your Role"}{" at " + st.session_state.company if st.session_state.company else ""}</p>', unsafe_allow_html=True)
 
         # Question card
-        badge_cls = "q-type-behavioral" if q_type == "Behavioral" else "q-type-technical"
+        beh_s = "background:#0a66c2;color:white" if q_type == "Behavioral" else "background:#f0f0f0;color:#aaa"
+        tec_s = "background:#057642;color:white" if q_type == "Technical" else "background:#f0f0f0;color:#aaa"
         st.markdown(f"""
-        <div class="q-card">
-            <span class="q-type-badge {badge_cls}">{"🤝 Behavioural" if q_type == "Behavioral" else "⚙️ Technical"}</span>
-            <div class="q-text">{q_text}</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+            <div style="padding:6px 16px;border-radius:999px;font-size:0.8rem;font-weight:600;{beh_s}">🤝 Behavioural</div>
+            <div style="padding:6px 16px;border-radius:999px;font-size:0.8rem;font-weight:600;{tec_s}">⚙️ Technical</div>
         </div>
+        <div class="q-card"><div class="q-text">{q_text}</div></div>
         """, unsafe_allow_html=True)
 
         # STAR tip for behavioral
@@ -420,24 +416,27 @@ elif st.session_state.step == 2:
             pred = scores.get("pred_label", "")
             emoji = {"weak": "🔴", "good": "🟡", "strong": "🟢"}.get(pred, "")
 
+            pred_label = pred.capitalize() if pred else "–"
+            pred_desc = {"Weak": "Short or vague — add more detail", "Good": "Solid answer — add specific results", "Strong": "Excellent — clear, structured, specific"}.get(pred_label, "")
             if scores.get("mode") == "ml_model":
                 st.markdown(f"""
-                <div class="score-row">
-                    <div class="score-box">
-                        <div class="score-num" style="color:{c}">{ov}</div>
-                        <div class="score-lbl">Overall Score</div>
+                <div style="background:#fff;border-radius:8px;border:1px solid #e0e0e0;padding:20px 24px;margin:16px 0">
+                    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+                        <div style="font-size:2.5rem;font-weight:900;color:{c}">{ov}<span style="font-size:1rem;color:#999;font-weight:400">/100</span></div>
+                        <div>
+                            <div style="font-weight:700;font-size:1rem;color:{c}">{emoji} {pred_label}</div>
+                            <div style="font-size:0.8rem;color:#666;margin-top:2px">{pred_desc}</div>
+                        </div>
                     </div>
-                    <div class="score-box">
-                        <div class="score-num" style="color:{score_color(scores.get('ml_score',0))}">{scores.get('ml_score',0)}</div>
-                        <div class="score-lbl">ML Quality</div>
-                    </div>
-                    <div class="score-box">
-                        <div class="score-num" style="color:{score_color(scores.get('keyword_hit',0))}">{scores.get('keyword_hit',0)}</div>
-                        <div class="score-lbl">Keyword Match</div>
-                    </div>
-                    <div class="score-box">
-                        <div class="score-num" style="font-size:1.4rem">{emoji}</div>
-                        <div class="score-lbl">{pred.capitalize() if pred else "–"}</div>
+                    <div style="display:flex;gap:8px">
+                        <div style="flex:1;background:#f8f9fa;border-radius:6px;padding:10px;text-align:center">
+                            <div style="font-size:1.2rem;font-weight:700;color:{score_color(scores.get('ml_score',0))}">{scores.get('ml_score',0)}/100</div>
+                            <div style="font-size:0.72rem;color:#777;margin-top:2px">Answer quality<br><span style="color:#aaa">(structure &amp; content)</span></div>
+                        </div>
+                        <div style="flex:1;background:#f8f9fa;border-radius:6px;padding:10px;text-align:center">
+                            <div style="font-size:1.2rem;font-weight:700;color:{score_color(scores.get('keyword_hit',0))}">{scores.get('keyword_hit',0)}/100</div>
+                            <div style="font-size:0.72rem;color:#777;margin-top:2px">Skill relevance<br><span style="color:#aaa">(matches job requirements)</span></div>
+                        </div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -487,29 +486,36 @@ elif st.session_state.step == 2:
             st.rerun()
 
     with col_side:
-        # Progress tracker
-        st.markdown('<div class="li-card">', unsafe_allow_html=True)
-        st.markdown(f'<div style="font-weight:700;font-size:0.85rem;margin-bottom:12px">Progress · {len(log)}/{total}</div>', unsafe_allow_html=True)
-        for i, e in enumerate(log):
-            ov = e["scores"].get("overall", 0)
-            c  = score_color(ov)
-            pred = e["scores"].get("pred_label", "")
-            emoji = {"weak":"🔴","good":"🟡","strong":"🟢"}.get(pred,"")
-            st.markdown(f"""
-            <div style="background:#f8f9fa;border-radius:6px;padding:8px 10px;margin-bottom:6px;
-                        border-left:3px solid {c}">
-                <span style="font-size:0.72rem;color:#666">Q{i+1} · {e['type']}</span><br>
-                <span style="font-weight:700;color:{c}">{ov}/100</span>
-                <span style="float:right">{emoji}</span>
-            </div>""", unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        # Progress tracker — only show if there are answered questions
+        if log:
+            st.markdown(f'<div style="font-weight:700;font-size:0.85rem;margin-bottom:10px;color:#1a1a1a">Progress · {len(log)}/{total} answered</div>', unsafe_allow_html=True)
+            for i, e in enumerate(log):
+                ov = e["scores"].get("overall", 0)
+                c  = score_color(ov)
+                pred = e["scores"].get("pred_label", "")
+                emoji = {"weak":"🔴","good":"🟡","strong":"🟢"}.get(pred,"")
+                st.markdown(f"""
+                <div style="background:#fff;border-radius:6px;padding:8px 12px;margin-bottom:6px;
+                            border:1px solid #e0e0e0;border-left:3px solid {c}">
+                    <span style="font-size:0.72rem;color:#666">Q{i+1} · {e['type']}</span><br>
+                    <span style="font-weight:700;color:{c}">{ov}/100</span>
+                    <span style="float:right">{emoji}</span>
+                </div>""", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
 
-        # Skills
-        st.markdown('<div class="li-card">', unsafe_allow_html=True)
-        st.markdown('<div style="font-weight:700;font-size:0.85rem;margin-bottom:8px">Key Skills for this role</div>', unsafe_allow_html=True)
-        chips = "".join(f'<span class="skill-chip">{k}</span>' for k in st.session_state.keywords[:8])
-        st.markdown(chips, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        # Job overview — key skills + context
+        job_title = st.session_state.job_title or "This Role"
+        company   = st.session_state.company or ""
+        keywords  = st.session_state.keywords[:8]
+        header = f"{job_title}{' at ' + company if company else ''}"
+        chips = "".join(f'<span class="skill-chip">{k}</span>' for k in keywords)
+        st.markdown(f"""
+        <div style="background:#fff;border-radius:8px;border:1px solid #e0e0e0;padding:16px">
+            <div style="font-weight:700;font-size:0.85rem;color:#1a1a1a;margin-bottom:4px">{header}</div>
+            <div style="font-size:0.75rem;color:#666;margin-bottom:10px">Key requirements</div>
+            {chips}
+        </div>
+        """, unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════════════════
