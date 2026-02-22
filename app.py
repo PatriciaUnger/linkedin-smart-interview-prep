@@ -308,23 +308,27 @@ if st.session_state.step == 1:
                 st.session_state.job_title = job_title
                 st.session_state.company   = company
 
+            demo_questions = {
+                "role_summary": job_title,
+                "behavioral": [
+                    "Tell me about a time you had to learn a new skill quickly to deliver a project.",
+                    "Describe a situation where you disagreed with a team member. How did you handle it?",
+                    f"Give an example of how you used data to solve a real business problem.",
+                ],
+                "technical": [
+                    f"Explain your experience with {keywords[0] if keywords else 'the main technology in this role'}.",
+                    "How do you ensure quality and reliability in your work?",
+                    "Walk me through how you would approach a complex analytical problem from scratch.",
+                ]
+            }
             with st.spinner("Generating your personalised questions..."):
                 if api_key:
-                    questions = generate_questions(job_desc, keywords, num_behavioral=3, num_technical=3)
+                    try:
+                        questions = generate_questions(job_desc, keywords, num_behavioral=3, num_technical=3)
+                    except Exception:
+                        questions = demo_questions
                 else:
-                    questions = {
-                        "role_summary": job_title,
-                        "behavioral": [
-                            "Tell me about a time you had to learn a new skill quickly to deliver a project.",
-                            "Describe a situation where you disagreed with a team member. How did you handle it?",
-                            f"Give an example of how you used data to solve a real business problem.",
-                        ],
-                        "technical": [
-                            f"Explain your experience with {keywords[0] if keywords else 'the main technology in this role'}.",
-                            "How do you ensure quality and reliability in your work?",
-                            "Walk me through how you would approach a complex analytical problem from scratch.",
-                        ]
-                    }
+                    questions = demo_questions
 
             all_q = []
             for q in questions.get("behavioral", []):
@@ -406,12 +410,19 @@ elif st.session_state.step == 2:
             wc_cls = "good" if 80 <= wc <= 200 else "warn" if wc > 30 else ""
             st.markdown(f'<div class="word-count {wc_cls}">{wc} words {"✓" if 80 <= wc <= 200 else ""}</div>', unsafe_allow_html=True)
 
+        # Store answer in session state to survive reruns
+        if f"submitted_{idx}" not in st.session_state:
+            st.session_state[f"submitted_{idx}"] = False
+
         bc1, bc2 = st.columns([1, 4])
-        submit = bc1.button("Submit →", type="primary", disabled=not (answer and answer.strip()))
-        skip   = bc2.button("Skip question")
+        submit = bc1.button("Submit →", type="primary", 
+                           disabled=not (answer and answer.strip()) or st.session_state[f"submitted_{idx}"],
+                           key=f"submit_btn_{idx}")
+        skip   = bc2.button("Skip question", key=f"skip_btn_{idx}")
 
         # After submit
-        if submit and answer.strip():
+        if submit and answer.strip() and not st.session_state[f"submitted_{idx}"]:
+            st.session_state[f"submitted_{idx}"] = True
             with st.spinner("Scoring..."):
                 scores = score_answer(q_text, answer, st.session_state.job_desc, q_type)
 
@@ -464,9 +475,12 @@ elif st.session_state.step == 2:
 
             with st.spinner("Getting AI feedback..."):
                 if st.session_state.api_key:
-                    feedback = get_feedback(q_text, answer, q_type, scores, st.session_state.job_desc)
+                    try:
+                        feedback = get_feedback(q_text, answer, q_type, scores, st.session_state.job_desc)
+                    except Exception:
+                        feedback = "**Tip:** Use the STAR method — Situation, Task, Action, Result. Include specific measurable outcomes to strengthen your answer."
                 else:
-                    feedback = "**Add your API key in Step 1 to get personalised AI coaching feedback.**\n\nTip: Use the STAR method and include specific measurable results."
+                    feedback = "**Tip:** Use the STAR method — Situation, Task, Action, Result. Include specific measurable outcomes to strengthen your answer."
 
             st.markdown(f'<div class="feedback-box">{feedback}</div>', unsafe_allow_html=True)
 
@@ -474,7 +488,12 @@ elif st.session_state.step == 2:
                 "question": q_text, "type": q_type,
                 "answer": answer, "scores": scores, "feedback": feedback,
             })
+            # Store scores/feedback so next button works after rerun
+            st.session_state[f"scores_{idx}"] = scores
+            st.session_state[f"feedback_{idx}"] = feedback
 
+        # Show next button if this question was already submitted
+        if st.session_state.get(f"submitted_{idx}", False):
             st.divider()
             label = "Next Question →" if idx + 1 < total else "See My Results →"
             if st.button(label, type="primary", key=f"next_{idx}"):
