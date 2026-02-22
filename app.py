@@ -9,7 +9,7 @@ from ai_coach import generate_questions, get_feedback, get_session_summary
 
 st.set_page_config(
     page_title="LinkedIn · Smart Interview Prep",
-    page_icon="💼",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -227,7 +227,7 @@ st.markdown("""
     <span style="font-size:1.8rem;font-weight:900;color:#0a66c2;letter-spacing:-1px;line-height:1">in</span>
     <span style="color:#666;font-size:0.85rem;border-left:1px solid #e0e0e0;padding-left:16px">
         Smart Interview Prep &nbsp;
-        <span style="background:#0a66c2;color:white;border-radius:4px;padding:2px 8px;font-size:0.7rem">AI ✨</span>
+        <span style="background:#0a66c2;color:white;border-radius:4px;padding:2px 8px;font-size:0.7rem">AI</span>
     </span>
 </div>
 """, unsafe_allow_html=True)
@@ -380,15 +380,15 @@ elif st.session_state.step == 2:
         tec_s = "background:#057642;color:white" if q_type == "Technical" else "background:#f0f0f0;color:#aaa"
         st.markdown(f"""
         <div style="display:flex;gap:8px;margin-bottom:12px">
-            <div style="padding:6px 16px;border-radius:999px;font-size:0.8rem;font-weight:600;{beh_s}">🤝 Behavioural</div>
-            <div style="padding:6px 16px;border-radius:999px;font-size:0.8rem;font-weight:600;{tec_s}">⚙️ Technical</div>
+            <div style="padding:6px 16px;border-radius:999px;font-size:0.8rem;font-weight:600;{beh_s}">Behavioural</div>
+            <div style="padding:6px 16px;border-radius:999px;font-size:0.8rem;font-weight:600;{tec_s}">Technical</div>
         </div>
         <div class="q-card"><div class="q-text">{q_text}</div></div>
         """, unsafe_allow_html=True)
 
         # STAR tip for behavioral
         if q_type == "Behavioral":
-            with st.expander("💡 STAR Method tip"):
+            with st.expander("STAR Method tip"):
                 st.markdown("""
 **Situation** → Set the context  
 **Task** → What was your responsibility  
@@ -429,7 +429,7 @@ elif st.session_state.step == 2:
             ov = scores.get("overall", 0)
             c  = score_color(ov)
             pred = scores.get("pred_label", "")
-            emoji = {"weak": "🔴", "good": "🟡", "strong": "🟢"}.get(pred, "")
+            emoji = {"weak": "", "good": "", "strong": ""}.get(pred, "")
 
             pred_label = pred.capitalize() if pred else "–"
             pred_desc = {"Weak": "Short or vague — add more detail", "Good": "Solid answer — add specific results", "Strong": "Excellent — clear, structured, specific"}.get(pred_label, "")
@@ -516,7 +516,7 @@ elif st.session_state.step == 2:
                 ov = e["scores"].get("overall", 0)
                 c  = score_color(ov)
                 pred = e["scores"].get("pred_label", "")
-                emoji = {"weak":"🔴","good":"🟡","strong":"🟢"}.get(pred,"")
+                emoji = {"weak":"","good":"","strong":""}.get(pred,"")
                 st.markdown(f"""
                 <div style="background:#fff;border-radius:6px;padding:8px 12px;margin-bottom:6px;
                             border:1px solid #e0e0e0;border-left:3px solid {c}">
@@ -593,7 +593,7 @@ elif st.session_state.step == 3:
             for i, e in enumerate(entries):
                 ov   = e["scores"].get("overall", 0)
                 pred = e["scores"].get("pred_label", "")
-                emoji= {"weak":"🔴","good":"🟡","strong":"🟢"}.get(pred,"")
+                emoji= {"weak":"","good":"","strong":""}.get(pred,"")
                 c    = score_color(ov)
                 with st.expander(f"Q{i+1} · {e['type']} · {emoji} {ov}/100 — {e['question'][:60]}..."):
                     st.markdown(f"**Question:** {e['question']}")
@@ -618,9 +618,9 @@ elif st.session_state.step == 3:
             weak   = labels_q.count("weak")
             st.markdown(f"""
             <div style="font-size:0.82rem;line-height:2">
-                🟢 Strong: <b>{strong}</b><br>
-                🟡 Good: <b>{good}</b><br>
-                🔴 Weak: <b>{weak}</b>
+                 Strong: <b>{strong}</b><br>
+                 Good: <b>{good}</b><br>
+                 Weak: <b>{weak}</b>
             </div>
             """, unsafe_allow_html=True)
         else:
@@ -644,7 +644,7 @@ elif st.session_state.step == 3:
         st.markdown('<div style="margin-top:8px">', unsafe_allow_html=True)
         report = json.dumps({"job_title": st.session_state.job_title, "company": st.session_state.company,
                              "grade": grade, "avg_overall": avg, "questions": answered}, indent=2)
-        st.download_button("⬇️ Download Report", data=report,
+        st.download_button("Download Report", data=report,
                            file_name="interview_report.json", mime="application/json",
                            use_container_width=True)
         if st.button("Start New Interview", use_container_width=True):
