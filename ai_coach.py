@@ -10,14 +10,9 @@ import anthropic
 import json
 import re
 
-# Initialise client – reads ANTHROPIC_API_KEY from environment
-_client = None
-
+# Initialise client – always reads fresh from environment so Streamlit secrets work
 def _get_client():
-    global _client
-    if _client is None:
-        _client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
-    return _client
+    return anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
 
 
 MODEL = "claude-haiku-4-5-20251001"   # fast + cheap for prototyping
