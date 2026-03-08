@@ -522,7 +522,7 @@ elif st.session_state["step"] == 4:
         with st.spinner("Coaching..."):
             response = chat(
                 user_message=user_input,
-                conversation_history=st.session_state["chat_history"],
+                history=st.session_state["chat_history"],
                 session_data=session_data,
             )
         st.rerun()
