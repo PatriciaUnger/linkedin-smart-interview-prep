@@ -197,7 +197,7 @@ if st.session_state["step"] == 1:
         3. Get AI-scored feedback
         4. Chat with your personal coach
         """)
-        st.info("New in v2: Feedback is grounded in a knowledge base of real example answers using RAG.")
+        st.info("New: Feedback now references real example answers from a curated knowledge base, plus an AI coach you can chat with after your session.")
 
 # ════════════════════════════════════════════════════════════════════════
 # STEP 2 — Practice
