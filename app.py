@@ -1,654 +1,541 @@
 """
-app.py - LinkedIn Smart Interview Prep
-Clean, LinkedIn-style UI
+LinkedIn Smart Interview Prep — v2
 """
+
 import streamlit as st
 import json
-from nlp_pipeline import extract_keywords, score_answer, classify_question, model_is_trained, get_model_metrics
-from ai_coach import generate_questions, get_feedback, get_session_summary
+import re
+from nlp_pipeline import extract_keywords, compute_score
+from ai_coach import generate_questions, analyse_answer
+import plotly.graph_objects as go
+from rag_engine import RAGEngine
+from interview_kb import get_knowledge_base
+from chatbot import chat, get_initial_message
+import joblib
+import os
 
+# ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="LinkedIn · Smart Interview Prep",
-    page_icon="",
+    page_title="LinkedIn Smart Interview Prep",
+    page_icon="in",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
+# ── Load ML model ─────────────────────────────────────────────────────────────
+@st.cache_resource
+def load_model():
+    try:
+        model = joblib.load("artefacts/model_pipeline.pkl")
+        le = joblib.load("artefacts/label_encoder.pkl")
+        return model, le
+    except Exception:
+        return None, None
+
+# ── Initialise RAG engine once ────────────────────────────────────────────────
+@st.cache_resource
+def load_rag_engine():
+    kb = get_knowledge_base()
+    return RAGEngine(kb)
+
+model, le = load_model()
+rag_engine = load_rag_engine()
+
+# ── Global styles ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap');
-
-* { font-family: 'Source Sans Pro', sans-serif; box-sizing: border-box; }
-
-.stApp { background: #f3f2ef; }
-
-/* Hide streamlit chrome */
-#MainMenu, footer, header { visibility: hidden; }
-.stDeployButton { display: none; }
-section[data-testid="stSidebar"] { display: none; }
-
-/* LinkedIn Navbar */
-.li-nav {
-    background: #ffffff;
-    border-bottom: 1px solid #e0e0e0;
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    height: 52px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    margin-bottom: 0;
-}
-.li-nav-logo {
-    font-size: 1.6rem;
-    font-weight: 900;
-    color: #0a66c2;
-    letter-spacing: -1px;
-}
-.li-nav-feature {
-    font-size: 0.8rem;
-    color: #666;
-    border-left: 1px solid #e0e0e0;
-    padding-left: 16px;
-    margin-left: 4px;
-}
-
-/* Main card */
-.li-card {
-    background: #ffffff;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
-    padding: 24px;
-    margin-bottom: 12px;
-}
-
-/* Job input area */
-.li-section-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin-bottom: 16px;
-}
-
-/* Question card */
-.q-card {
-    background: #fff;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
-    padding: 28px 32px;
-    margin-bottom: 16px;
-}
-.q-type-badge {
-    display: inline-block;
-    padding: 3px 12px;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-bottom: 14px;
-}
-.q-type-behavioral {
-    background: #e8f0fe;
-    color: #0a66c2;
-}
-.q-type-technical {
-    background: #e6f4ea;
-    color: #057642;
-}
-.q-text {
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: #1a1a1a;
-    line-height: 1.5;
-    margin-bottom: 20px;
-}
-
-/* Skill chips */
-.skill-chip {
-    display: inline-block;
-    background: #eef3fb;
-    color: #0a66c2;
-    border-radius: 999px;
-    padding: 4px 12px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    margin: 3px;
-}
-
-/* Score display */
-.score-row {
-    display: flex;
-    gap: 12px;
-    margin: 16px 0;
-}
-.score-box {
-    flex: 1;
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 14px;
-    text-align: center;
-    border: 1px solid #e0e0e0;
-}
-.score-num {
-    font-size: 1.8rem;
-    font-weight: 700;
-}
-.score-lbl {
-    font-size: 0.72rem;
-    color: #777;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-top: 2px;
-}
-
-/* Progress steps */
-.steps {
-    display: flex;
-    gap: 0;
-    margin-bottom: 24px;
-    background: #fff;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
-    overflow: hidden;
-}
-.step {
-    flex: 1;
-    padding: 12px;
-    text-align: center;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: #999;
-    border-right: 1px solid #e0e0e0;
-}
-.step:last-child { border-right: none; }
-.step.active { background: #0a66c2; color: white; }
-.step.done { background: #e6f4ea; color: #057642; }
-
-/* Feedback box */
-.feedback-box {
-    background: #f0f7ff;
-    border-left: 3px solid #0a66c2;
-    border-radius: 0 8px 8px 0;
-    padding: 16px 20px;
-    font-size: 0.92rem;
-    line-height: 1.7;
-    color: #1a1a1a;
-    margin-top: 16px;
-}
-
-/* Primary button override */
-.stButton > button[kind="primary"] {
-    background: #0a66c2 !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 24px !important;
-    font-weight: 600 !important;
-    padding: 8px 24px !important;
-}
-.stButton > button[kind="primary"]:hover {
-    background: #004182 !important;
-}
-.stButton > button {
-    border-radius: 24px !important;
-    font-weight: 600 !important;
-}
-
-/* Text areas and inputs */
-.stTextArea textarea {
-    border-radius: 8px !important;
-    border-color: #e0e0e0 !important;
-    font-size: 0.95rem !important;
-}
-.stTextArea textarea:focus {
-    border-color: #0a66c2 !important;
-    box-shadow: 0 0 0 2px #0a66c233 !important;
-}
-.stTextInput input {
-    border-radius: 8px !important;
-}
-
-/* Word count */
-.word-count {
-    font-size: 0.78rem;
-    color: #999;
-    text-align: right;
-    margin-top: 4px;
-}
-.word-count.good { color: #057642; }
-.word-count.warn { color: #d97706; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+  .navbar {
+    background: #0a66c2; padding: 12px 24px; border-radius: 8px;
+    display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+  }
+  .navbar-logo { color: white; font-size: 22px; font-weight: 700; }
+  .navbar-badge {
+    background: rgba(255,255,255,0.2); color: white;
+    padding: 3px 10px; border-radius: 12px; font-size: 12px;
+  }
+  .progress-bar-container {
+    display: flex; justify-content: space-between;
+    margin-bottom: 28px; position: relative;
+  }
+  .step { text-align: center; flex: 1; }
+  .step-circle {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 14px; margin-bottom: 6px;
+  }
+  .step-active .step-circle { background: #0a66c2; color: white; }
+  .step-done .step-circle { background: #057642; color: white; }
+  .step-inactive .step-circle { background: #e0e0e0; color: #666; }
+  .step-label { font-size: 12px; color: #555; }
+  .question-card {
+    border: 1px solid #e0e0e0; border-radius: 10px;
+    padding: 20px 24px; margin-bottom: 16px;
+    background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .pill {
+    display: inline-block; padding: 3px 10px;
+    border-radius: 12px; font-size: 11px; font-weight: 600;
+    margin-right: 6px;
+  }
+  .pill-behavioural-active { background: #e8f4fd; color: #0a66c2; }
+  .pill-technical-active { background: #fef3e2; color: #b45309; }
+  .pill-inactive { background: #f0f0f0; color: #aaa; }
+  .score-card {
+    border-radius: 10px; padding: 16px 20px; margin-top: 12px;
+  }
+  .score-strong { background: #ecfdf5; border-left: 4px solid #057642; }
+  .score-good   { background: #fffbeb; border-left: 4px solid #d97706; }
+  .score-weak   { background: #fef2f2; border-left: 4px solid #dc2626; }
+  .rag-context-box {
+    background: #f0f7ff; border: 1px solid #bfdbfe;
+    border-radius: 8px; padding: 12px 16px; margin-top: 8px;
+    font-size: 12px; color: #1e40af;
+  }
+  .chat-user { background: #0a66c2; color: white; border-radius: 16px 16px 4px 16px; padding: 10px 14px; margin: 6px 0; max-width: 80%; margin-left: auto; }
+  .chat-assistant { background: #f3f4f6; color: #111; border-radius: 16px 16px 16px 4px; padding: 10px 14px; margin: 6px 0; max-width: 80%; }
+  .section-divider { border: none; border-top: 1px solid #e0e0e0; margin: 20px 0; }
+  .keyword-chip {
+    display: inline-block; background: #e8f4fd; color: #0a66c2;
+    border-radius: 12px; padding: 3px 10px; font-size: 12px; margin: 3px;
+  }
 </style>
 """, unsafe_allow_html=True)
 
-# ── NAVBAR ──────────────────────────────────────────────────
+# ── Session state init ────────────────────────────────────────────────────────
+defaults = {
+    "step": 1,
+    "job_title": "",
+    "company": "",
+    "job_description": "",
+    "difficulty": "Mid-level",
+    "keywords": [],
+    "questions": [],
+    "current_q": 0,
+    "answers": [],
+    "overall_score": 0,
+    "submitted": {},
+    "chat_history": [],
+    "chat_initialised": False,
+}
+for k, v in defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
+
+# ── Navbar ────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style="background:#ffffff;border-bottom:1px solid #e0e0e0;padding:12px 24px;
-            display:flex;align-items:center;gap:16px;margin-bottom:16px">
-    <span style="font-size:1.8rem;font-weight:900;color:#0a66c2;letter-spacing:-1px;line-height:1">in</span>
-    <span style="color:#666;font-size:0.85rem;border-left:1px solid #e0e0e0;padding-left:16px">
-        Smart Interview Prep &nbsp;
-        <span style="background:#0a66c2;color:white;border-radius:4px;padding:2px 8px;font-size:0.7rem">AI</span>
-    </span>
+<div class="navbar">
+  <span class="navbar-logo">in</span>
+  <span class="navbar-logo" style="font-size:16px;">LinkedIn</span>
+  <span class="navbar-badge">Smart Interview Prep AI</span>
 </div>
 """, unsafe_allow_html=True)
 
-# ── SESSION STATE ────────────────────────────────────────────
-def init():
-    defaults = {
-        "step": 1,
-        "job_desc": "", "job_title": "", "company": "",
-        "keywords": [], "all_questions": [], "questions": {},
-        "current_q_idx": 0, "session_log": [], "api_key": "",
-    }
-    for k, v in defaults.items():
-        if k not in st.session_state:
-            st.session_state[k] = v
-init()
+# ── Progress bar ──────────────────────────────────────────────────────────────
+def progress_bar(current_step):
+    steps = ["Setup", "Practice", "Report", "Coach"]
+    html = '<div class="progress-bar-container">'
+    for i, label in enumerate(steps, 1):
+        if i < current_step:
+            cls = "step-done"
+        elif i == current_step:
+            cls = "step-active"
+        else:
+            cls = "step-inactive"
+        html += f'<div class="step {cls}"><div class="step-circle">{i}</div><div class="step-label">{label}</div></div>'
+    html += "</div>"
+    st.markdown(html, unsafe_allow_html=True)
 
-def score_color(s):
-    if s >= 75: return "#057642"
-    if s >= 50: return "#d97706"
-    return "#dc2626"
+progress_bar(st.session_state["step"])
 
-# ── STEP INDICATOR ───────────────────────────────────────────
-steps_html = ""
-labels = ["1 · Setup", "2 · Practice", "3 · Report"]
-for i, label in enumerate(labels):
-    cls = "active" if st.session_state.step == i+1 else ("done" if st.session_state.step > i+1 else "step")
-    steps_html += f'<div class="step {cls}">{label}</div>'
-st.markdown(f'<div class="steps">{steps_html}</div>', unsafe_allow_html=True)
-
-
-# ════════════════════════════════════════════════════════════
-# STEP 1 — SETUP
-# ════════════════════════════════════════════════════════════
-if st.session_state.step == 1:
-
-    col_main, col_side = st.columns([3, 1], gap="large")
+# ════════════════════════════════════════════════════════════════════════
+# STEP 1 — Setup
+# ════════════════════════════════════════════════════════════════════════
+if st.session_state["step"] == 1:
+    col_main, col_side = st.columns([2, 1])
 
     with col_main:
-        st.markdown('<div class="li-card">', unsafe_allow_html=True)
-        st.markdown('<div class="li-section-title">Prepare for your interview</div>', unsafe_allow_html=True)
-        st.markdown('<p style="color:#666;font-size:0.9rem;margin-bottom:20px">Paste the job description from LinkedIn — we\'ll generate questions tailored to this specific role.</p>', unsafe_allow_html=True)
-
-        c1, c2 = st.columns(2)
-        job_title = c1.text_input("Job Title", placeholder="e.g. Senior Data Scientist", label_visibility="visible")
-        company   = c2.text_input("Company",   placeholder="e.g. Google", label_visibility="visible")
-
-        job_desc = st.text_area(
-            "Job Description",
-            placeholder="Paste the full job description here...",
+        st.subheader("Set up your interview")
+        st.session_state["job_title"] = st.text_input("Job Title", st.session_state["job_title"], placeholder="e.g. Senior Product Manager")
+        st.session_state["company"] = st.text_input("Company", st.session_state["company"], placeholder="e.g. Spotify")
+        st.session_state["difficulty"] = st.select_slider(
+            "Experience level",
+            options=["Entry Level", "Mid-level", "Senior", "Lead / Principal"],
+            value=st.session_state["difficulty"],
+        )
+        st.session_state["job_description"] = st.text_area(
+            "Paste the job description",
+            st.session_state["job_description"],
             height=220,
+            placeholder="Paste the full job description here...",
         )
 
-        col_btn, col_info = st.columns([1, 3])
-        start = col_btn.button("Generate Questions →", type="primary",
-                               disabled=not job_desc.strip(), use_container_width=True)
-        if not job_desc.strip():
-            col_info.markdown('<p style="color:#999;font-size:0.85rem;margin-top:8px">Paste a job description to get started</p>', unsafe_allow_html=True)
-        api_key = ""
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        if start and job_desc.strip():
-            import os
-            # Load API key from Streamlit secrets (set in Streamlit Cloud dashboard)
-            try:
-                api_key = st.secrets["ANTHROPIC_API_KEY"]
-            except:
-                api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-            if api_key:
-                os.environ["ANTHROPIC_API_KEY"] = api_key
-                st.session_state.api_key = api_key
-
-            with st.spinner("Analysing job description..."):
-                keywords = extract_keywords(job_desc, top_n=12)
-                st.session_state.keywords  = keywords
-                st.session_state.job_desc  = job_desc
-                st.session_state.job_title = job_title
-                st.session_state.company   = company
-
-            demo_questions = {
-                "role_summary": job_title,
-                "behavioral": [
-                    "Tell me about a time you had to learn a new skill quickly to deliver a project.",
-                    "Describe a situation where you disagreed with a team member. How did you handle it?",
-                    f"Give an example of how you used data to solve a real business problem.",
-                ],
-                "technical": [
-                    f"Explain your experience with {keywords[0] if keywords else 'the main technology in this role'}.",
-                    "How do you ensure quality and reliability in your work?",
-                    "Walk me through how you would approach a complex analytical problem from scratch.",
-                ]
-            }
-            with st.spinner("Generating your personalised questions..."):
-                if api_key:
-                    try:
-                        questions = generate_questions(job_desc, keywords, num_behavioral=3, num_technical=3)
-                    except Exception:
-                        questions = demo_questions
-                else:
-                    questions = demo_questions
-
-            all_q = []
-            for q in questions.get("behavioral", []):
-                all_q.append({"question": q, "type": "Behavioral"})
-            for q in questions.get("technical", []):
-                all_q.append({"question": q, "type": "Technical"})
-
-            st.session_state.questions = questions
-            st.session_state.all_questions = all_q
-            st.session_state.step = 2
-            st.rerun()
-
-    with col_side:
-        if st.session_state.keywords:
-            st.markdown('<div class="li-card">', unsafe_allow_html=True)
-            st.markdown('<div style="font-weight:700;font-size:0.85rem;margin-bottom:8px">Detected Skills</div>', unsafe_allow_html=True)
-            chips = "".join(f'<span class="skill-chip">{k}</span>' for k in st.session_state.keywords)
-            st.markdown(chips, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-
-# ════════════════════════════════════════════════════════════
-# STEP 2 — PRACTICE
-# ════════════════════════════════════════════════════════════
-elif st.session_state.step == 2:
-
-    all_q = st.session_state.all_questions
-    idx   = st.session_state.current_q_idx
-    log   = st.session_state.session_log
-
-    if idx >= len(all_q):
-        st.session_state.step = 3
-        st.rerun()
-
-    current = all_q[idx]
-    q_text  = current["question"]
-    q_type  = current["type"]
-    total   = len(all_q)
-
-    col_main, col_side = st.columns([3, 1], gap="large")
-
-    with col_main:
-        # Progress bar
-        st.progress(idx / total)
-        st.markdown(f'<p style="font-size:0.8rem;color:#666;margin-bottom:16px">Question {idx+1} of {total} · {st.session_state.job_title or "Your Role"}{" at " + st.session_state.company if st.session_state.company else ""}</p>', unsafe_allow_html=True)
-
-        # Question card
-        beh_s = "background:#0a66c2;color:white" if q_type == "Behavioral" else "background:#f0f0f0;color:#aaa"
-        tec_s = "background:#057642;color:white" if q_type == "Technical" else "background:#f0f0f0;color:#aaa"
-        st.markdown(f"""
-        <div style="display:flex;gap:8px;margin-bottom:12px">
-            <div style="padding:6px 16px;border-radius:999px;font-size:0.8rem;font-weight:600;{beh_s}">Behavioural</div>
-            <div style="padding:6px 16px;border-radius:999px;font-size:0.8rem;font-weight:600;{tec_s}">Technical</div>
-        </div>
-        <div class="q-card"><div class="q-text">{q_text}</div></div>
-        """, unsafe_allow_html=True)
-
-        # STAR tip for behavioral
-        if q_type == "Behavioral":
-            with st.expander("STAR Method tip"):
-                st.markdown("""
-**Situation** → Set the context  
-**Task** → What was your responsibility  
-**Action** → Specific steps you took  
-**Result** → Measurable outcome
-                """)
-
-        # Answer input
-        answer = st.text_area(
-            "Your answer",
-            placeholder="Type your answer here... Aim for 80–150 words.",
-            height=160,
-            key=f"ans_{idx}",
-            label_visibility="visible"
-        )
-
-        if answer:
-            wc = len(answer.split())
-            wc_cls = "good" if 80 <= wc <= 200 else "warn" if wc > 30 else ""
-            st.markdown(f'<div class="word-count {wc_cls}">{wc} words {"✓" if 80 <= wc <= 200 else ""}</div>', unsafe_allow_html=True)
-
-        # Store answer in session state to survive reruns
-        if f"submitted_{idx}" not in st.session_state:
-            st.session_state[f"submitted_{idx}"] = False
-
-        bc1, bc2 = st.columns([1, 4])
-        submit = bc1.button("Submit →", type="primary", 
-                           disabled=not (answer and answer.strip()) or st.session_state[f"submitted_{idx}"],
-                           key=f"submit_btn_{idx}")
-        skip   = bc2.button("Skip question", key=f"skip_btn_{idx}")
-
-        # After submit
-        if submit and answer.strip() and not st.session_state[f"submitted_{idx}"]:
-            st.session_state[f"submitted_{idx}"] = True
-            with st.spinner("Scoring..."):
-                scores = score_answer(q_text, answer, st.session_state.job_desc, q_type)
-
-            ov = scores.get("overall", 0)
-            c  = score_color(ov)
-            pred = scores.get("pred_label", "")
-            emoji = {"weak": "", "good": "", "strong": ""}.get(pred, "")
-
-            pred_label = pred.capitalize() if pred else "–"
-            pred_desc = {"Weak": "Short or vague — add more detail", "Good": "Solid answer — add specific results", "Strong": "Excellent — clear, structured, specific"}.get(pred_label, "")
-            if scores.get("mode") == "ml_model":
-                st.markdown(f"""
-                <div style="background:#fff;border-radius:8px;border:1px solid #e0e0e0;padding:20px 24px;margin:16px 0">
-                    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
-                        <div style="font-size:2.5rem;font-weight:900;color:{c}">{ov}<span style="font-size:1rem;color:#999;font-weight:400">/100</span></div>
-                        <div>
-                            <div style="font-weight:700;font-size:1rem;color:{c}">{emoji} {pred_label}</div>
-                            <div style="font-size:0.8rem;color:#666;margin-top:2px">{pred_desc}</div>
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:8px">
-                        <div style="flex:1;background:#f8f9fa;border-radius:6px;padding:10px;text-align:center">
-                            <div style="font-size:1.2rem;font-weight:700;color:{score_color(scores.get('ml_score',0))}">{scores.get('ml_score',0)}/100</div>
-                            <div style="font-size:0.72rem;color:#777;margin-top:2px">Answer quality<br><span style="color:#aaa">(structure &amp; content)</span></div>
-                        </div>
-                        <div style="flex:1;background:#f8f9fa;border-radius:6px;padding:10px;text-align:center">
-                            <div style="font-size:1.2rem;font-weight:700;color:{score_color(scores.get('keyword_hit',0))}">{scores.get('keyword_hit',0)}/100</div>
-                            <div style="font-size:0.72rem;color:#777;margin-top:2px">Skill relevance<br><span style="color:#aaa">(matches job requirements)</span></div>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+        if st.button("Generate Interview", type="primary", use_container_width=True):
+            if not st.session_state["job_title"] or not st.session_state["job_description"]:
+                st.warning("Please fill in the job title and job description.")
             else:
-                st.markdown(f"""
-                <div class="score-row">
-                    <div class="score-box">
-                        <div class="score-num" style="color:{c}">{ov}</div>
-                        <div class="score-lbl">Overall</div>
-                    </div>
-                    <div class="score-box">
-                        <div class="score-num" style="color:{score_color(scores.get('relevance',0))}">{scores.get('relevance',0)}</div>
-                        <div class="score-lbl">Relevance</div>
-                    </div>
-                    <div class="score-box">
-                        <div class="score-num" style="color:{score_color(scores.get('completeness',0))}">{scores.get('completeness',0)}</div>
-                        <div class="score-lbl">Completeness</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-            with st.spinner("Getting AI feedback..."):
-                if st.session_state.api_key:
+                with st.spinner("Analysing job description and generating questions..."):
+                    kw = extract_keywords(st.session_state["job_description"])
+                    st.session_state["keywords"] = kw
                     try:
-                        feedback = get_feedback(q_text, answer, q_type, scores, st.session_state.job_desc)
+                        qs = generate_questions(
+                            st.session_state["job_title"],
+                            st.session_state["company"],
+                            st.session_state["job_description"],
+                            st.session_state["difficulty"],
+                        )
                     except Exception:
-                        feedback = "**Tip:** Use the STAR method — Situation, Task, Action, Result. Include specific measurable outcomes to strengthen your answer."
-                else:
-                    feedback = "**Tip:** Use the STAR method — Situation, Task, Action, Result. Include specific measurable outcomes to strengthen your answer."
-
-            st.markdown(f'<div class="feedback-box">{feedback}</div>', unsafe_allow_html=True)
-
-            st.session_state.session_log.append({
-                "question": q_text, "type": q_type,
-                "answer": answer, "scores": scores, "feedback": feedback,
-            })
-            # Store scores/feedback so next button works after rerun
-            st.session_state[f"scores_{idx}"] = scores
-            st.session_state[f"feedback_{idx}"] = feedback
-
-        # Show next button if this question was already submitted
-        if st.session_state.get(f"submitted_{idx}", False):
-            st.divider()
-            label = "Next Question →" if idx + 1 < total else "See My Results →"
-            if st.button(label, type="primary", key=f"next_{idx}"):
-                st.session_state.current_q_idx = idx + 1
-                st.rerun()
-
-        if skip:
-            st.session_state.session_log.append({
-                "question": q_text, "type": q_type,
-                "answer": "[Skipped]", "scores": {"overall": 0}, "feedback": "Skipped.",
-            })
-            st.session_state.current_q_idx += 1
-            st.rerun()
+                        qs = [
+                            {"question": "Tell me about a time you led a cross-functional project.", "type": "behavioural", "skill": "leadership"},
+                            {"question": "Describe a situation where you had to make a data-driven decision.", "type": "behavioural", "skill": "analytical thinking"},
+                            {"question": f"How would you approach building a roadmap for {st.session_state['job_title']}?", "type": "technical", "skill": "product strategy"},
+                            {"question": "Tell me about a time you handled a disagreement with a stakeholder.", "type": "behavioural", "skill": "conflict resolution"},
+                            {"question": "Walk me through how you would prioritise a backlog with 80 items.", "type": "technical", "skill": "prioritisation"},
+                        ]
+                    st.session_state["questions"] = qs
+                    st.session_state["answers"] = []
+                    st.session_state["current_q"] = 0
+                    st.session_state["submitted"] = {}
+                    st.session_state["step"] = 2
+                    st.rerun()
 
     with col_side:
-        # Progress tracker — only show if there are answered questions
-        if log:
-            st.markdown(f'<div style="font-weight:700;font-size:0.85rem;margin-bottom:10px;color:#1a1a1a">Progress · {len(log)}/{total} answered</div>', unsafe_allow_html=True)
-            for i, e in enumerate(log):
-                ov = e["scores"].get("overall", 0)
-                c  = score_color(ov)
-                pred = e["scores"].get("pred_label", "")
-                emoji = {"weak":"","good":"","strong":""}.get(pred,"")
-                st.markdown(f"""
-                <div style="background:#fff;border-radius:6px;padding:8px 12px;margin-bottom:6px;
-                            border:1px solid #e0e0e0;border-left:3px solid {c}">
-                    <span style="font-size:0.72rem;color:#666">Q{i+1} · {e['type']}</span><br>
-                    <span style="font-weight:700;color:{c}">{ov}/100</span>
-                    <span style="float:right">{emoji}</span>
-                </div>""", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("#### How it works")
+        st.markdown("""
+        1. Paste a real job description
+        2. Answer tailored questions
+        3. Get AI-scored feedback
+        4. Chat with your personal coach
+        """)
+        st.info("New in v2: Feedback is grounded in a knowledge base of real example answers using RAG.")
 
-        # Job overview — key skills + context
-        job_title = st.session_state.job_title or "This Role"
-        company   = st.session_state.company or ""
-        keywords  = st.session_state.keywords[:8]
-        header = f"{job_title}{' at ' + company if company else ''}"
-        chips = "".join(f'<span class="skill-chip">{k}</span>' for k in keywords)
-        st.markdown(f"""
-        <div style="background:#fff;border-radius:8px;border:1px solid #e0e0e0;padding:16px">
-            <div style="font-weight:700;font-size:0.85rem;color:#1a1a1a;margin-bottom:4px">{header}</div>
-            <div style="font-size:0.75rem;color:#666;margin-bottom:10px">Key requirements</div>
-            {chips}
-        </div>
-        """, unsafe_allow_html=True)
+# ════════════════════════════════════════════════════════════════════════
+# STEP 2 — Practice
+# ════════════════════════════════════════════════════════════════════════
+elif st.session_state["step"] == 2:
+    questions = st.session_state["questions"]
+    total = len(questions)
+    answered = len(st.session_state["answers"])
+    idx = st.session_state["current_q"]
 
+    col_main, col_side = st.columns([2, 1])
 
-# ════════════════════════════════════════════════════════════
-# STEP 3 — REPORT
-# ════════════════════════════════════════════════════════════
-elif st.session_state.step == 3:
-
-    log      = st.session_state.session_log
-    answered = [e for e in log if e["answer"] != "[Skipped]"]
-
-    if not answered:
-        st.warning("No questions answered.")
-        if st.button("Start Over"):
-            for k in list(st.session_state.keys()): del st.session_state[k]
-            init(); st.rerun()
-        st.stop()
-
-    avg = round(sum(e["scores"]["overall"] for e in answered) / len(answered))
-    if avg >= 80:   grade, gc = "Excellent", "#057642"
-    elif avg >= 65: grade, gc = "Strong", "#0a66c2"
-    elif avg >= 50: grade, gc = "Good", "#d97706"
-    else:           grade, gc = "Needs Work", "#dc2626"
-
-    title_str = f'{st.session_state.job_title or "Your Role"}{" at " + st.session_state.company if st.session_state.company else ""}'
-
-    col_main, col_side = st.columns([3, 1], gap="large")
+    with col_side:
+        st.markdown("#### Your progress")
+        st.progress(answered / total)
+        st.caption(f"{answered} of {total} answered")
+        st.markdown("#### Role requirements")
+        kw_html = "".join(f'<span class="keyword-chip">{k}</span>' for k in st.session_state["keywords"][:10])
+        st.markdown(kw_html, unsafe_allow_html=True)
 
     with col_main:
-        # Header result
-        st.markdown(f"""
-        <div class="li-card" style="text-align:center;padding:32px">
-            <div style="font-size:0.85rem;color:#666;margin-bottom:8px">{title_str}</div>
-            <div style="font-size:3rem;font-weight:900;color:{gc}">{avg}<span style="font-size:1.2rem;color:#999">/100</span></div>
-            <div style="font-size:1.1rem;font-weight:700;color:{gc};margin-top:4px">{grade}</div>
-            <div style="font-size:0.82rem;color:#999;margin-top:8px">{len(answered)} questions answered</div>
-        </div>
-        """, unsafe_allow_html=True)
+        if idx < total:
+            q = questions[idx]
+            q_type = q.get("type", "behavioural")
 
-        # AI Summary
-        st.markdown('<div class="li-card">', unsafe_allow_html=True)
-        st.markdown('<div class="li-section-title">AI Coach Summary</div>', unsafe_allow_html=True)
-        with st.spinner("Generating summary..."):
-            summary = get_session_summary(answered) if st.session_state.api_key else "Add your API key to get a personalised session summary with strengths and improvement areas."
-        st.markdown(f'<div class="feedback-box">{summary}</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+            b_cls = "pill-behavioural-active" if q_type == "behavioural" else "pill-inactive"
+            t_cls = "pill-technical-active" if q_type == "technical" else "pill-inactive"
 
-        # Question review
-        st.markdown('<div class="li-section-title" style="margin-top:8px">Question Review</div>', unsafe_allow_html=True)
-        tab_all, tab_beh, tab_tech = st.tabs(["All", "Behavioural", "Technical"])
-
-        def render_entries(entries):
-            for i, e in enumerate(entries):
-                ov   = e["scores"].get("overall", 0)
-                pred = e["scores"].get("pred_label", "")
-                emoji= {"weak":"","good":"","strong":""}.get(pred,"")
-                c    = score_color(ov)
-                with st.expander(f"Q{i+1} · {e['type']} · {emoji} {ov}/100 — {e['question'][:60]}..."):
-                    st.markdown(f"**Question:** {e['question']}")
-                    st.markdown(f"**Your answer:** {e['answer']}")
-                    st.markdown(f'**Score: <span style="color:{c};font-weight:700">{ov}/100</span>**', unsafe_allow_html=True)
-                    st.markdown(f'<div class="feedback-box">{e["feedback"]}</div>', unsafe_allow_html=True)
-
-        with tab_all:  render_entries(answered)
-        with tab_beh:  render_entries([e for e in answered if e["type"]=="Behavioral"])
-        with tab_tech: render_entries([e for e in answered if e["type"]=="Technical"])
-
-    with col_side:
-        # Score breakdown
-        st.markdown('<div class="li-card">', unsafe_allow_html=True)
-        st.markdown('<div style="font-weight:700;font-size:0.85rem;margin-bottom:12px">Score Breakdown</div>', unsafe_allow_html=True)
-
-        mode = answered[0]["scores"].get("mode","heuristic")
-        if mode == "ml_model":
-            labels_q = [e["scores"].get("pred_label","") for e in answered]
-            strong = labels_q.count("strong")
-            good   = labels_q.count("good")
-            weak   = labels_q.count("weak")
             st.markdown(f"""
-            <div style="font-size:0.82rem;line-height:2">
-                 Strong: <b>{strong}</b><br>
-                 Good: <b>{good}</b><br>
-                 Weak: <b>{weak}</b>
+            <div class="question-card">
+              <div style="margin-bottom:10px;">
+                <span class="pill {b_cls}">Behavioural</span>
+                <span class="pill {t_cls}">Technical</span>
+              </div>
+              <p style="font-size:17px; font-weight:600; margin:0;">{q['question']}</p>
             </div>
             """, unsafe_allow_html=True)
+
+            with st.expander("STAR method tip"):
+                st.markdown("""
+                **S**ituation — Set the scene briefly  
+                **T**ask — What was your responsibility?  
+                **A**ction — What did YOU specifically do?  
+                **R**esult — What was the measurable outcome?
+                """)
+
+            answer_key = f"answer_{idx}"
+            answer = st.text_area(
+                "Your answer",
+                key=answer_key,
+                height=160,
+                placeholder="Write your answer here...",
+            )
+            word_count = len(answer.split()) if answer.strip() else 0
+            st.caption(f"{word_count} words")
+
+            col_sub, col_skip = st.columns([1, 1])
+
+            with col_sub:
+                submitted_key = f"submitted_{idx}"
+                if not st.session_state["submitted"].get(submitted_key):
+                    if st.button("Submit Answer", type="primary", use_container_width=True):
+                        if not answer.strip():
+                            st.warning("Please write an answer before submitting.")
+                        else:
+                            with st.spinner("Analysing answer (step 1: competencies, step 2: feedback)..."):
+                                # ML score
+                                ml_score, kw_score, overall = compute_score(
+                                    answer,
+                                    st.session_state["keywords"],
+                                    model, le
+                                )
+
+                                # RAG: retrieve similar examples
+                                rag_context = rag_engine.build_rag_context(query=answer, k=2)
+
+                                # Two-call pipeline: Call A (competencies) → Call B (feedback)
+                                result = analyse_answer(
+                                    question=q["question"],
+                                    answer=answer,
+                                    question_type=q_type,
+                                    job_title=st.session_state["job_title"],
+                                    keywords=st.session_state["keywords"],
+                                    rag_context=rag_context,
+                                )
+
+                                entry = {
+                                    "question": q["question"],
+                                    "type": q_type,
+                                    "answer": answer,
+                                    "score": overall,
+                                    "ml_score": ml_score,
+                                    "kw_score": kw_score,
+                                    "feedback": result.get("feedback", ""),
+                                    "strengths": result.get("strengths", []),
+                                    "improvements": result.get("improvements", []),
+                                    "competencies": result.get("competencies", {}),
+                                    "rag_context_used": rag_context,
+                                }
+                                st.session_state["answers"].append(entry)
+                                st.session_state["submitted"][submitted_key] = True
+                                st.rerun()
+                else:
+                    # Show result
+                    entry = next(
+                        (a for a in st.session_state["answers"] if a["question"] == q["question"]),
+                        None,
+                    )
+                    if entry:
+                        score = entry["score"]
+                        if score >= 75:
+                            grade, cls = "Strong", "score-strong"
+                        elif score >= 50:
+                            grade, cls = "Good", "score-good"
+                        else:
+                            grade, cls = "Needs work", "score-weak"
+
+                        st.markdown(f"""
+                        <div class="score-card {cls}">
+                          <strong>{score}/100 — {grade}</strong><br>
+                          <small>ML Quality: {entry['ml_score']}/100 &nbsp;|&nbsp; Keyword Match: {entry['kw_score']}/100</small><br><br>
+                          {entry['feedback']}
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                        if entry.get("strengths"):
+                            st.markdown("**Strengths:** " + " · ".join(entry["strengths"]))
+                        if entry.get("improvements"):
+                            st.markdown("**To improve:** " + " · ".join(entry["improvements"]))
+
+                        # Show which KB examples were used (transparency)
+                        with st.expander("View retrieved examples used for feedback"):
+                            st.markdown(
+                                f'<div class="rag-context-box">{entry["rag_context_used"].replace(chr(10), "<br>")}</div>',
+                                unsafe_allow_html=True,
+                            )
+
+                        # Next question
+                        if st.button("Next Question", type="primary", use_container_width=True):
+                            st.session_state["current_q"] += 1
+                            if st.session_state["current_q"] >= total:
+                                scores = [a["score"] for a in st.session_state["answers"]]
+                                st.session_state["overall_score"] = round(sum(scores) / len(scores)) if scores else 0
+                                st.session_state["step"] = 3
+                            st.rerun()
+
+            with col_skip:
+                if not st.session_state["submitted"].get(f"submitted_{idx}"):
+                    if st.button("Skip", use_container_width=True):
+                        st.session_state["answers"].append({
+                            "question": q["question"],
+                            "type": q_type,
+                            "answer": "[skipped]",
+                            "score": 0,
+                            "ml_score": 0,
+                            "kw_score": 0,
+                            "feedback": "Question skipped.",
+                            "strengths": [],
+                            "improvements": [],
+                            "rag_context_used": "",
+                        })
+                        st.session_state["submitted"][f"submitted_{idx}"] = True
+                        st.session_state["current_q"] += 1
+                        if st.session_state["current_q"] >= total:
+                            scores = [a["score"] for a in st.session_state["answers"] if a["answer"] != "[skipped]"]
+                            st.session_state["overall_score"] = round(sum(scores) / len(scores)) if scores else 0
+                            st.session_state["step"] = 3
+                        st.rerun()
+
+# ════════════════════════════════════════════════════════════════════════
+# STEP 3 — Report
+# ════════════════════════════════════════════════════════════════════════
+elif st.session_state["step"] == 3:
+    overall = st.session_state["overall_score"]
+    answers = st.session_state["answers"]
+
+    if overall >= 75:
+        grade_label, grade_color = "Strong Candidate", "#057642"
+    elif overall >= 50:
+        grade_label, grade_color = "Good Candidate", "#d97706"
+    else:
+        grade_label, grade_color = "Needs Preparation", "#dc2626"
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Overall Score", f"{overall}/100")
+    col2.metric("Questions", len(answers))
+    col3.metric("Assessment", grade_label)
+
+    st.markdown(f"<hr class='section-divider'>", unsafe_allow_html=True)
+
+    tab1, tab2, tab3 = st.tabs(["Competency Radar", "Score per Question", "Download Report"])
+
+    with tab1:
+        # ── Python post-processing: aggregate competency scores across all answers ──
+        comp_keys = ["structure", "specificity", "impact", "relevance", "communication"]
+        agg = {k: [] for k in comp_keys}
+        for a in answers:
+            for k in comp_keys:
+                val = a.get("competencies", {}).get(k)
+                if val is not None:
+                    agg[k].append(val)
+        avg_comps = {k: round(sum(v) / len(v)) if v else 0 for k, v in agg.items()}
+
+        # Radar chart
+        labels = [c.capitalize() for c in comp_keys]
+        values = [avg_comps[k] for k in comp_keys]
+        values_closed = values + [values[0]]
+        labels_closed = labels + [labels[0]]
+
+        fig_radar = go.Figure()
+        fig_radar.add_trace(go.Scatterpolar(
+            r=values_closed,
+            theta=labels_closed,
+            fill="toself",
+            fillcolor="rgba(10, 102, 194, 0.15)",
+            line=dict(color="#0a66c2", width=2),
+            name="Your profile",
+        ))
+        fig_radar.update_layout(
+            polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+            showlegend=False,
+            margin=dict(t=40, b=40),
+            height=380,
+            title="Average competency profile across all answers",
+        )
+        st.plotly_chart(fig_radar, use_container_width=True)
+
+        weakest = min(avg_comps, key=avg_comps.get)
+        strongest = max(avg_comps, key=avg_comps.get)
+        st.markdown(f"**Strongest dimension:** {strongest.capitalize()} ({avg_comps[strongest]}/100)  \n"
+                    f"**Most room to improve:** {weakest.capitalize()} ({avg_comps[weakest]}/100)")
+
+    with tab2:
+        # Bar chart — score per question
+        q_labels = [f"Q{i+1}" for i in range(len(answers))]
+        q_scores = [a["score"] for a in answers]
+        colors = ["#057642" if s >= 75 else "#d97706" if s >= 50 else "#dc2626" for s in q_scores]
+
+        fig_bar = go.Figure(go.Bar(
+            x=q_labels,
+            y=q_scores,
+            marker_color=colors,
+            text=q_scores,
+            textposition="outside",
+        ))
+        fig_bar.update_layout(
+            yaxis=dict(range=[0, 110], title="Score /100"),
+            xaxis_title="Question",
+            title="Score per question",
+            height=340,
+            margin=dict(t=40, b=40),
+            plot_bgcolor="white",
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+        for i, a in enumerate(answers, 1):
+            score = a["score"]
+            color = "#057642" if score >= 75 else "#d97706" if score >= 50 else "#dc2626"
+            with st.expander(f"Q{i}: {a['question'][:70]}... — {score}/100"):
+                st.markdown(f"**Your answer:** {a['answer']}")
+                st.markdown(f"**Score:** <span style='color:{color};font-weight:600'>{score}/100</span>", unsafe_allow_html=True)
+                st.markdown(f"**Feedback:** {a['feedback']}")
+
+    with tab3:
+        report = {
+            "job_title": st.session_state["job_title"],
+            "company": st.session_state["company"],
+            "overall_score": overall,
+            "answers": answers,
+        }
+        st.download_button(
+            "Download Full Report (JSON)",
+            data=json.dumps(report, indent=2),
+            file_name="interview_report.json",
+            mime="application/json",
+        )
+
+    st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
+    if st.button("Chat with your AI Coach", type="primary", use_container_width=True):
+        st.session_state["step"] = 4
+        st.rerun()
+
+    if st.button("Start New Interview", use_container_width=True):
+        for k in defaults:
+            st.session_state[k] = defaults[k]
+        st.rerun()
+
+# ════════════════════════════════════════════════════════════════════════
+# STEP 4 — AI Coach Chatbot
+# ════════════════════════════════════════════════════════════════════════
+elif st.session_state["step"] == 4:
+    st.subheader("AI Interview Coach")
+    st.caption("Ask me about your answers, how to improve, or request example answers.")
+
+    session_data = {
+        "job_title": st.session_state["job_title"],
+        "company": st.session_state["company"],
+        "keywords": st.session_state["keywords"],
+        "overall_score": st.session_state["overall_score"],
+        "answers": st.session_state["answers"],
+    }
+
+    # Initialise with opening message
+    if not st.session_state["chat_initialised"]:
+        opening = get_initial_message(session_data)
+        st.session_state["chat_history"] = [{"role": "assistant", "content": opening}]
+        st.session_state["chat_initialised"] = True
+
+    # Render chat history
+    for msg in st.session_state["chat_history"]:
+        if msg["role"] == "user":
+            st.markdown(f'<div class="chat-user">{msg["content"]}</div>', unsafe_allow_html=True)
         else:
-            import pandas as pd
-            chart_df = pd.DataFrame({"Score": [
-                round(sum(e["scores"].get("relevance",0) for e in answered)/len(answered)),
-                round(sum(e["scores"].get("completeness",0) for e in answered)/len(answered)),
-                round(sum(e["scores"].get("keyword_hit",0) for e in answered)/len(answered)),
-            ]}, index=["Relevance","Completeness","Keywords"])
-            st.bar_chart(chart_df)
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="chat-assistant">{msg["content"]}</div>', unsafe_allow_html=True)
 
-        # Skills
-        st.markdown('<div class="li-card">', unsafe_allow_html=True)
-        st.markdown('<div style="font-weight:700;font-size:0.85rem;margin-bottom:8px">Role Skills</div>', unsafe_allow_html=True)
-        chips = "".join(f'<span class="skill-chip">{k}</span>' for k in st.session_state.keywords[:8])
-        st.markdown(chips, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Input
+    user_input = st.chat_input("Ask your coach...")
+    if user_input:
+        with st.spinner("Coaching..."):
+            response = chat(
+                user_message=user_input,
+                conversation_history=st.session_state["chat_history"],
+                session_data=session_data,
+            )
+        st.rerun()
 
-        # Download + restart
-        st.markdown('<div style="margin-top:8px">', unsafe_allow_html=True)
-        report = json.dumps({"job_title": st.session_state.job_title, "company": st.session_state.company,
-                             "grade": grade, "avg_overall": avg, "questions": answered}, indent=2)
-        st.download_button("Download Report", data=report,
-                           file_name="interview_report.json", mime="application/json",
-                           use_container_width=True)
-        if st.button("Start New Interview", use_container_width=True):
-            for k in list(st.session_state.keys()): del st.session_state[k]
-            init(); st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
+    st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
+    if st.button("Back to Report"):
+        st.session_state["step"] = 3
+        st.rerun()

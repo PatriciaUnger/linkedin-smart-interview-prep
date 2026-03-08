@@ -1,182 +1,154 @@
-"""
-ai_coach.py
-───────────
-All calls to the Anthropic Claude API live here.
-The Streamlit app imports only generate_questions() and get_feedback().
-"""
-
 import os
-import anthropic
 import json
-import re
+import anthropic
+import streamlit as st
 
-# Initialise client – always reads fresh from environment so Streamlit secrets work
-def _get_client():
-    return anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
-
-
-MODEL = "claude-haiku-4-5-20251001"   # fast + cheap for prototyping
+# the five dimensions I want to track per answer
+COMPETENCY_DIMS = ["structure", "specificity", "impact", "relevance", "communication"]
 
 
-# ─────────────────────────────────────────────────────────────
-# 1. QUESTION GENERATION
-# ─────────────────────────────────────────────────────────────
+def _client():
+    key = st.secrets.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_API_KEY", "")
+    return anthropic.Anthropic(api_key=key)
 
-def generate_questions(
-    job_description: str,
-    keywords: list[str],
-    num_behavioral: int = 3,
-    num_technical: int = 3,
-    difficulty: str = "Medium",
-) -> dict:
+
+def generate_questions(job_title, company, job_description, difficulty, num_questions=5):
+    c = _client()
+    prompt = f"""You are a recruiter at {company} hiring for {job_title}.
+
+Job description:
+{job_description[:1200]}
+
+Seniority: {difficulty}
+
+Write exactly {num_questions} interview questions for this role. Mix behavioural and technical.
+Return ONLY a JSON array, no other text:
+[
+  {{"question": "...", "type": "behavioural", "skill": "..."}},
+  {{"question": "...", "type": "technical", "skill": "..."}}
+]"""
+
+    r = c.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1000,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw = r.content[0].text.strip().replace("```json", "").replace("```", "").strip()
+    return json.loads(raw)
+
+
+def score_competencies(question, answer, q_type):
     """
-    Given a job description and extracted keywords, generate interview questions.
-
-    Returns:
-        {
-          "behavioral": ["Q1", "Q2", ...],
-          "technical":  ["Q1", "Q2", ...],
-          "role_summary": "short 1-line summary of the role"
-        }
+    First LLM call: just score, no coaching yet.
+    I split this into a separate call because mixing scoring and feedback
+    in one prompt gave inconsistent results — the model would justify
+    scores with the feedback instead of scoring objectively.
     """
-    keyword_str = ", ".join(keywords) if keywords else "not provided"
+    c = _client()
+    prompt = f"""Score this interview answer on five dimensions. Only score, no advice.
 
-    prompt = f"""You are an expert technical recruiter. Based on the job description below, 
-generate interview questions tailored specifically to this role.
+Question ({q_type}): {question}
+Answer: {answer}
 
-JOB DESCRIPTION:
-{job_description[:3000]}
+Dimensions (0-100 each):
+- structure: logical flow, e.g. STAR format
+- specificity: concrete details, numbers, examples vs. vague statements
+- impact: measurable outcomes mentioned
+- relevance: how directly it answers the question
+- communication: clarity and conciseness
 
-KEY SKILLS DETECTED: {keyword_str}
-DIFFICULTY LEVEL: {difficulty}
-
-Generate exactly {num_behavioral} behavioral questions and {num_technical} technical questions.
-Behavioral questions should use the STAR method format (Situation, Task, Action, Result).
-Technical questions should test depth of knowledge relevant to this specific role.
-
-Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
+Return only this JSON:
 {{
-  "role_summary": "one sentence describing the role",
-  "behavioral": ["question 1", "question 2", "question 3"],
-  "technical": ["question 1", "question 2", "question 3"]
+  "structure": 0,
+  "specificity": 0,
+  "impact": 0,
+  "relevance": 0,
+  "communication": 0,
+  "weakest": "dimension_name",
+  "strongest": "dimension_name"
 }}"""
 
+    r = c.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=300,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw = r.content[0].text.strip().replace("```json", "").replace("```", "").strip()
+    return json.loads(raw)
+
+
+def get_coaching(question, answer, q_type, job_title, keywords, rag_context, scores):
+    """
+    Second LLM call: generate feedback using the scores from the first call
+    plus retrieved examples from the knowledge base.
+    The scores tell the model where to focus; the examples give it something
+    concrete to reference rather than producing generic advice.
+    """
+    c = _client()
+    kw = ", ".join(keywords[:8]) if keywords else "N/A"
+
+    if scores:
+        score_summary = "\n".join(f"  {k}: {scores[k]}/100" for k in COMPETENCY_DIMS if k in scores)
+        weakest = scores.get("weakest", "specificity")
+        score_block = f"Dimension scores:\n{score_summary}\nFocus feedback on: {weakest}"
+    else:
+        score_block = ""
+
+    prompt = f"""You are an interview coach. Give feedback on this answer using the scores and examples below.
+
+Role: {job_title}
+Required skills: {kw}
+Question ({q_type}): {question}
+Candidate answer: {answer}
+
+{score_block}
+
+{rag_context}
+
+Write 2-3 sentences of specific coaching. Mention what dimension is weakest and reference
+the strong example to show what good looks like. Be direct, not generic.
+
+Return only this JSON:
+{{
+  "feedback": "...",
+  "strengths": ["..."],
+  "improvements": ["..."]
+}}"""
+
+    r = c.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=500,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw = r.content[0].text.strip().replace("```json", "").replace("```", "").strip()
+    return json.loads(raw)
+
+
+def analyse_answer(question, answer, question_type, job_title, keywords, rag_context):
+    # step 1: score the answer across dimensions
     try:
-        response = _get_client().messages.create(
-            model=MODEL,
-            max_tokens=1024,
-            messages=[{"role": "user", "content": prompt}]
+        scores = score_competencies(question, answer, question_type)
+    except Exception:
+        scores = {d: 50 for d in COMPETENCY_DIMS}
+        scores["weakest"] = "specificity"
+        scores["strongest"] = "communication"
+
+    # step 2: use those scores + retrieved examples to generate coaching
+    try:
+        coaching = get_coaching(
+            question, answer, question_type,
+            job_title, keywords, rag_context, scores
         )
-        raw = response.content[0].text.strip()
-        # Strip markdown code fences if present
-        raw = re.sub(r"^```[a-z]*\n?", "", raw)
-        raw = re.sub(r"\n?```$", "", raw)
-        result = json.loads(raw)
-        # Validate structure
-        result.setdefault("role_summary", "")
-        result.setdefault("behavioral", [])
-        result.setdefault("technical", [])
-        return result
-    except Exception as e:
-        return {
-            "role_summary": "Could not parse role",
-            "behavioral": [f"Error generating questions: {e}"],
-            "technical": [],
+    except Exception:
+        coaching = {
+            "feedback": "Decent attempt. Try to add specific numbers and outcomes to strengthen your answer.",
+            "strengths": ["Relevant topic covered"],
+            "improvements": ["Add measurable results"],
         }
 
-
-# ─────────────────────────────────────────────────────────────
-# 2. ANSWER FEEDBACK
-# ─────────────────────────────────────────────────────────────
-
-def get_feedback(
-    question: str,
-    answer: str,
-    question_type: str,
-    scores: dict,
-    job_description: str = "",
-) -> str:
-    """
-    Provide detailed, actionable coaching feedback on the candidate's answer.
-    Returns a markdown-formatted string.
-    """
-    score_summary = (
-        f"Relevance: {scores.get('relevance', 0)}/100 | "
-        f"Completeness: {scores.get('completeness', 0)}/100 | "
-        f"Keyword Usage: {scores.get('keyword_hit', 0)}/100 | "
-        f"Overall: {scores.get('overall', 0)}/100"
-    )
-
-    jd_context = f"\nJOB CONTEXT: {job_description[:500]}" if job_description else ""
-
-    prompt = f"""You are an expert interview coach giving feedback to a job candidate.
-
-QUESTION ({question_type}): {question}
-
-CANDIDATE'S ANSWER: {answer}
-
-AUTOMATED SCORES: {score_summary}{jd_context}
-
-Provide concise, encouraging yet honest coaching feedback. Structure your response as:
-
-**What worked well ✅**
-(2-3 specific strengths)
-
-**Areas to improve 🔧**  
-(2-3 concrete suggestions)
-
-**Stronger answer example 💡**
-(A brief 3-4 sentence model answer)
-
-Keep the total response under 250 words. Be specific, actionable, and encouraging."""
-
-    try:
-        response = _get_client().messages.create(
-            model=MODEL,
-            max_tokens=600,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.content[0].text.strip()
-    except Exception as e:
-        return f"⚠️ Could not generate AI feedback: {e}\n\nCheck your ANTHROPIC_API_KEY."
-
-
-# ─────────────────────────────────────────────────────────────
-# 3. SESSION SUMMARY
-# ─────────────────────────────────────────────────────────────
-
-def get_session_summary(session_data: list[dict]) -> str:
-    """
-    Given a list of {question, answer, scores} dicts, generate an overall
-    coaching summary for the entire interview session.
-    """
-    if not session_data:
-        return "No session data to summarise."
-
-    qa_text = "\n\n".join(
-        f"Q: {item['question']}\nA: {item['answer']}\nScore: {item['scores'].get('overall', 0)}/100"
-        for item in session_data[:6]   # cap to avoid huge prompts
-    )
-
-    prompt = f"""You are a career coach. The candidate just completed a mock interview. 
-Here are their Q&A pairs with scores:
-
-{qa_text}
-
-Write a concise overall performance summary (max 200 words) covering:
-1. Overall performance level (Needs Work / Good / Strong / Excellent)
-2. Top 2 strengths shown across all answers
-3. Top 2 priority areas to practise before the real interview
-4. One specific action they can take today to improve
-
-Be encouraging and specific."""
-
-    try:
-        response = _get_client().messages.create(
-            model=MODEL,
-            max_tokens=400,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.content[0].text.strip()
-    except Exception as e:
-        return f"⚠️ Could not generate summary: {e}"
+    return {
+        "feedback": coaching.get("feedback", ""),
+        "strengths": coaching.get("strengths", []),
+        "improvements": coaching.get("improvements", []),
+        "competencies": {d: scores.get(d, 50) for d in COMPETENCY_DIMS},
+    }
