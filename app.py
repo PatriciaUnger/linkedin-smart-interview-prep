@@ -5,13 +5,12 @@ LinkedIn Smart Interview Prep — v2
 import streamlit as st
 import json
 import re
-from nlp_pipeline import extract_keywords, compute_score
+from nlp_pipeline import extract_keywords, score_answer
 from ai_coach import generate_questions, analyse_answer
 import plotly.graph_objects as go
 from rag_engine import RAGEngine
 from interview_kb import get_knowledge_base
 from chatbot import chat, get_initial_message
-import joblib
 import os
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -22,23 +21,12 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Load ML model ─────────────────────────────────────────────────────────────
-@st.cache_resource
-def load_model():
-    try:
-        model = joblib.load("artefacts/model_pipeline.pkl")
-        le = joblib.load("artefacts/label_encoder.pkl")
-        return model, le
-    except Exception:
-        return None, None
-
 # ── Initialise RAG engine once ────────────────────────────────────────────────
 @st.cache_resource
 def load_rag_engine():
     kb = get_knowledge_base()
     return RAGEngine(kb)
 
-model, le = load_model()
 rag_engine = load_rag_engine()
 
 # ── Global styles ─────────────────────────────────────────────────────────────
@@ -275,12 +263,15 @@ elif st.session_state["step"] == 2:
                             st.warning("Please write an answer before submitting.")
                         else:
                             with st.spinner("Analysing answer (step 1: competencies, step 2: feedback)..."):
-                                # ML score
-                                ml_score, kw_score, overall = compute_score(
-                                    answer,
-                                    st.session_state["keywords"],
-                                    model, le
+                                result_score = score_answer(
+                                    question=q["question"],
+                                    answer=answer,
+                                    job_description=st.session_state["job_description"],
+                                    question_type=q_type,
                                 )
+                                ml_score = result_score.get("ml_score", result_score.get("relevance", 50))
+                                kw_score = result_score.get("keyword_hit", 50)
+                                overall = result_score.get("overall", 50)
 
                                 # RAG: retrieve similar examples
                                 rag_context = rag_engine.build_rag_context(query=answer, k=2)
