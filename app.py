@@ -1,5 +1,6 @@
 """
 LinkedIn Smart Interview Prep — v2
+
 """
 
 import streamlit as st
@@ -10,7 +11,7 @@ from ai_coach import generate_questions, analyse_answer
 import plotly.graph_objects as go
 from rag_engine import RAGEngine
 from interview_kb import get_knowledge_base
-from chatbot import chat, get_initial_message
+from chatbot import chat, opening_message
 import os
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -504,7 +505,7 @@ elif st.session_state["step"] == 4:
 
     # Initialise with opening message
     if not st.session_state["chat_initialised"]:
-        opening = get_initial_message(session_data)
+        opening = opening_message(session_data)
         st.session_state["chat_history"] = [{"role": "assistant", "content": opening}]
         st.session_state["chat_initialised"] = True
 
