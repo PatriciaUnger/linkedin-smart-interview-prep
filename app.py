@@ -1,7 +1,7 @@
 import streamlit as st
 import json
 from nlp_pipeline import extract_keywords, score_answer
-from ai_coach import generate_questions, analyse_answer
+from ai_coach import generate_questions, analyse_answer, build_candidate_mirror, build_prep_plan
 import plotly.graph_objects as go
 from rag_engine import RAGEngine
 from interview_kb import get_knowledge_base
@@ -112,6 +112,7 @@ defaults = {
     "questions": [], "current_q": 0, "answers": [],
     "overall_score": 0, "submitted": {},
     "chat_history": [], "chat_ready": False,
+    "mirror": None, "prep_plan": None,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -392,7 +393,7 @@ elif st.session_state["step"] == 3:
 
     st.markdown("---")
 
-    tab1, tab2, tab3 = st.tabs(["Competency Profile", "Score per Question", "Download"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Competency Profile", "Score per Question", "Candidate Mirror", "7-Day Prep Plan", "Download"])
 
     with tab1:
         dims = ["structure", "specificity", "impact", "relevance", "communication"]
@@ -440,11 +441,83 @@ elif st.session_state["step"] == 3:
                 st.markdown(f"**Feedback:** {a['feedback']}")
 
     with tab3:
+        st.caption("How did you come across? The AI reads all your answers together and builds a picture of you as a candidate — the same way an interviewer would.")
+        if st.session_state["mirror"] is None:
+            if st.button("Generate Candidate Mirror", type="primary"):
+                with st.spinner("Analysing your answers as a whole..."):
+                    try:
+                        mirror = build_candidate_mirror(
+                            answers=answers,
+                            job_title=st.session_state["job_title"],
+                            keywords=st.session_state["keywords"],
+                        )
+                        st.session_state["mirror"] = mirror
+                        st.rerun()
+                    except Exception:
+                        st.error("Could not generate mirror. Try again.")
+        else:
+            mirror = st.session_state["mirror"]
+            st.markdown("#### How you come across")
+            st.markdown(f'<div class="question-card"><div class="q-text" style="font-size:15px;font-weight:400;font-style:italic;">"{mirror.get("how_you_come_across", "")}"</div></div>', unsafe_allow_html=True)
+
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.markdown("**Communication style**")
+                st.markdown(mirror.get("communication_style", ""))
+                st.markdown("**Hidden strength**")
+                st.markdown(f'<div style="background:#f0fdf4;border-radius:8px;padding:12px 14px;border-left:3px solid #16a34a;font-size:14px;">{mirror.get("hidden_strength", "")}</div>', unsafe_allow_html=True)
+            with col_b:
+                st.markdown("**Blind spots**")
+                for b in mirror.get("blind_spots", []):
+                    st.markdown(f"- {b}")
+                st.markdown("**Doubts the interviewer is probably left with**")
+                for d in mirror.get("interviewer_doubts", []):
+                    st.markdown(f'<div style="background:#fef2f2;border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:13px;">❓ {d}</div>', unsafe_allow_html=True)
+
+    with tab4:
+        st.caption("A personalised 7-day plan based on your weakest competency dimensions and the role requirements.")
+        if st.session_state["prep_plan"] is None:
+            if st.button("Generate My Prep Plan", type="primary"):
+                with st.spinner("Building your personalised plan..."):
+                    try:
+                        dims = ["structure", "specificity", "impact", "relevance", "communication"]
+                        agg = {d: [] for d in dims}
+                        for a in answers:
+                            for d in dims:
+                                v = a.get("competencies", {}).get(d)
+                                if v is not None:
+                                    agg[d].append(v)
+                        avg_scores = {d: round(sum(v)/len(v)) if v else 50 for d, v in agg.items()}
+                        plan = build_prep_plan(
+                            answers=answers,
+                            job_title=st.session_state["job_title"],
+                            keywords=st.session_state["keywords"],
+                            competency_averages=avg_scores,
+                        )
+                        st.session_state["prep_plan"] = plan
+                        st.rerun()
+                    except Exception:
+                        st.error("Could not generate plan. Try again.")
+        else:
+            plan = st.session_state["prep_plan"]
+            focus = plan.get("focus_areas", [])
+            if focus:
+                st.markdown("**Focus areas:** " + "  ·  ".join(focus))
+            st.markdown("")
+            for day in plan.get("days", []):
+                with st.expander(f"Day {day['day']} — {day['title']}"):
+                    st.markdown(day["task"])
+            if plan.get("key_reminder"):
+                st.markdown(f'<div style="background:#fffbeb;border-radius:8px;padding:14px 16px;border-left:3px solid #d97706;margin-top:16px;"><strong>Morning of the interview:</strong><br>{plan["key_reminder"]}</div>', unsafe_allow_html=True)
+
+    with tab5:
         report = {
             "job_title": st.session_state["job_title"],
             "company": st.session_state["company"],
             "overall_score": overall,
             "answers": answers,
+            "mirror": st.session_state.get("mirror"),
+            "prep_plan": st.session_state.get("prep_plan"),
         }
         st.download_button(
             "Download report (JSON)",

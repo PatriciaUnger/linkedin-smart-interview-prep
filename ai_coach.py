@@ -152,3 +152,94 @@ def analyse_answer(question, answer, question_type, job_title, keywords, rag_con
         "improvements": coaching.get("improvements", []),
         "competencies": {d: scores.get(d, 50) for d in COMPETENCY_DIMS},
     }
+
+
+def build_candidate_mirror(answers, job_title, keywords):
+    """
+    Synthesises ALL answers together in one LLM call to produce a
+    'Candidate Mirror' — how the interviewer perceived the candidate.
+    This is different from per-answer feedback: it looks for patterns
+    across the whole session.
+    """
+    c = _client()
+    kw = ", ".join(keywords[:8]) if keywords else "N/A"
+
+    session_text = ""
+    for i, a in enumerate(answers, 1):
+        if a.get("answer") and a["answer"] != "[skipped]":
+            session_text += f"\nQ{i} ({a.get('type','')}) : {a['question']}\nAnswer: {a['answer']}\n"
+
+    prompt = f"""You are a senior hiring manager who has just finished interviewing a candidate for {job_title}.
+Required skills: {kw}
+
+Here are all their answers:
+{session_text}
+
+Analyse the candidate's answers as a whole — not per question, but as a complete picture.
+Look for patterns, recurring strengths, consistent gaps, and the overall impression they leave.
+
+Return ONLY this JSON:
+{{
+  "communication_style": "2 sentences describing how this person communicates — are they data-driven, storytelling, direct, vague, structured, etc.",
+  "blind_spots": ["pattern they consistently avoid, e.g. never quantifies outcomes", "another recurring gap"],
+  "how_you_come_across": "Write this in first person as if the interviewer is describing the candidate to a colleague after the interview. 3-4 sentences. Be honest.",
+  "interviewer_doubts": ["a doubt the interviewer is left with based on the answers", "another doubt", "a third doubt"],
+  "hidden_strength": "One genuine strength that came through consistently that the candidate probably does not realise is impressive"
+}}"""
+
+    r = c.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=700,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw = r.content[0].text.strip().replace("```json", "").replace("```", "").strip()
+    return json.loads(raw)
+
+
+def build_prep_plan(answers, job_title, keywords, competency_averages):
+    """
+    Generates a personalised 7-day prep plan based on the candidate's
+    weakest competency dimensions and the job requirements.
+    The plan is grounded in the actual scores — not generic advice.
+    """
+    c = _client()
+    kw = ", ".join(keywords[:8]) if keywords else "N/A"
+
+    # find the two weakest dims to focus the plan on
+    dims = ["structure", "specificity", "impact", "relevance", "communication"]
+    sorted_dims = sorted(dims, key=lambda d: competency_averages.get(d, 50))
+    weakest_two = sorted_dims[:2]
+    scores_str = ", ".join(f"{d}: {competency_averages.get(d, 50)}/100" for d in dims)
+
+    prompt = f"""You are an interview coach building a personalised preparation plan.
+
+Role: {job_title}
+Key skills required: {kw}
+Candidate's competency scores: {scores_str}
+Two dimensions that need most work: {', '.join(weakest_two)}
+
+Build a focused 7-day interview prep plan that targets the weak dimensions and the role requirements.
+Each day should have one clear, specific action — not vague advice like "practice more."
+
+Return ONLY this JSON:
+{{
+  "focus_areas": ["the two main things this plan targets"],
+  "days": [
+    {{"day": 1, "title": "short title", "task": "specific actionable task in 2 sentences"}},
+    {{"day": 2, "title": "short title", "task": "specific actionable task in 2 sentences"}},
+    {{"day": 3, "title": "short title", "task": "specific actionable task in 2 sentences"}},
+    {{"day": 4, "title": "short title", "task": "specific actionable task in 2 sentences"}},
+    {{"day": 5, "title": "short title", "task": "specific actionable task in 2 sentences"}},
+    {{"day": 6, "title": "short title", "task": "specific actionable task in 2 sentences"}},
+    {{"day": 7, "title": "short title", "task": "specific actionable task in 2 sentences"}}
+  ],
+  "key_reminder": "One sentence the candidate should read the morning of the interview"
+}}"""
+
+    r = c.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=800,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw = r.content[0].text.strip().replace("```json", "").replace("```", "").strip()
+    return json.loads(raw)
