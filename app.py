@@ -17,7 +17,8 @@ st.set_page_config(
 
 @st.cache_resource
 def load_rag_engine():
-    return RAGEngine(get_knowledge_base())
+    # V3: default to semantic embeddings; falls back to TF-IDF if unavailable
+    return RAGEngine(get_knowledge_base(), mode="semantic")
 
 rag_engine = load_rag_engine()
 
