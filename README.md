@@ -82,7 +82,3 @@ On first launch the `sentence-transformers` model (~80 MB) will download once an
 | **V3** | **Refine this answer** (new user-facing feature with per-dimension before/after deltas). Semantic embeddings replace TF-IDF. Knowledge base expanded from 20 to 38 examples. Internal evaluation layer behind `?dev=1` with 2×2 variant harness, 10 curated test cases, and Analytics dashboard. |
 
 See `2_pager_v3.md` (or the PDF version submitted) for the full V3 write-up.
-
-## Acknowledgements
-
-Built with heavy use of Claude as a coding collaborator. Design decisions (two-step scoring, Refine-as-closing-loop, 2×2 evaluation matrix) were mine; the code generation was Claude's.
