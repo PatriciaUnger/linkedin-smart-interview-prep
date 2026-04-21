@@ -1,0 +1,213 @@
+{
+  "run_id": "7b444cdc",
+  "timestamp_utc": "2026-04-21T09:02:37Z",
+  "model": "claude-sonnet-4-20250514",
+  "test_case": {
+    "id": "failure_semantic_rephrase",
+    "question": "Describe a project that didn't go as planned.",
+    "answer": "I led a six-month migration of our analytics pipeline. Halfway through we realised the new tool couldn't handle our event volume at peak. I paused the migration, wrote a retrospective, and proposed a hybrid architecture instead. We delivered a month late but the hybrid approach is still running today.",
+    "job_title": "Senior Data Engineer",
+    "question_type": "Behavioral",
+    "expected_skill": "learning from failure",
+    "expected_quality_tier": "strong",
+    "notes": "ADVERSARIAL: the answer is about handling failure but uses softer framing ('didn't go as planned', 'realised'). Tests whether semantic retrieval catches the failure/learning pattern without keyword matches."
+  },
+  "variants": {
+    "tfidf__v1_single": {
+      "retrieval_mode": "tfidf",
+      "feedback_style": "v1_single",
+      "top_3_retrievals": [
+        {
+          "skill": "learning from failure",
+          "quality": "strong",
+          "similarity": 0.1246,
+          "text_preview": "I once shipped a pricing experiment without checking that our analytics SDK was correctly attributin..."
+        },
+        {
+          "skill": "conflict resolution",
+          "quality": "strong",
+          "similarity": 0.0978,
+          "text_preview": "In my previous role as a product manager, two engineering leads disagreed on the architecture for a ..."
+        },
+        {
+          "skill": "stakeholder alignment",
+          "quality": "strong",
+          "similarity": 0.0824,
+          "text_preview": "During a product launch, the sales director wanted to delay by two weeks to align with a trade event..."
+        }
+      ],
+      "scores": {
+        "structure": 75,
+        "specificity": 70,
+        "impact": 65,
+        "relevance": 85,
+        "communication": 80
+      },
+      "feedback": "Good foundation with clear problem identification and resolution. Add more depth about your decision-making process and quantify the business impact. Show what you learned and how you applied those lessons systematically.",
+      "strengths": [
+        "Clear timeline and context",
+        "Shows ownership and proactive problem-solving",
+        "Demonstrates adaptability with hybrid solution",
+        "Mentions long-term success"
+      ],
+      "improvements": [
+        "Quantify the impact (cost, users affected, etc.)",
+        "Explain the decision-making process behind the pivot",
+        "Add what you learned and how you prevented similar issues",
+        "Include stakeholder communication details"
+      ],
+      "elapsed_sec": 5.69,
+      "error": null
+    },
+    "tfidf__v2_two_step": {
+      "retrieval_mode": "tfidf",
+      "feedback_style": "v2_two_step",
+      "top_3_retrievals": [
+        {
+          "skill": "learning from failure",
+          "quality": "strong",
+          "similarity": 0.1246,
+          "text_preview": "I once shipped a pricing experiment without checking that our analytics SDK was correctly attributin..."
+        },
+        {
+          "skill": "conflict resolution",
+          "quality": "strong",
+          "similarity": 0.0978,
+          "text_preview": "In my previous role as a product manager, two engineering leads disagreed on the architecture for a ..."
+        },
+        {
+          "skill": "stakeholder alignment",
+          "quality": "strong",
+          "similarity": 0.0824,
+          "text_preview": "During a product launch, the sales director wanted to delay by two weeks to align with a trade event..."
+        }
+      ],
+      "scores": {
+        "structure": 75,
+        "specificity": 70,
+        "impact": 60,
+        "relevance": 95,
+        "communication": 85
+      },
+      "feedback": "Your answer lacks quantifiable impact - you mention delivering 'a month late' but don't show the business value of your solution. Compare this to the strong example that specifies '6% lift' and 'three preventable root causes.' Add concrete metrics like performance improvements, cost savings, or reliability gains from your hybrid architecture to demonstrate the positive outcome of your pivoting decision.",
+      "strengths": [
+        "Clear problem identification and decisive action",
+        "Shows ownership and leadership in pausing the migration",
+        "Demonstrates long-term thinking with the hybrid solution"
+      ],
+      "improvements": [
+        "Quantify the impact with specific metrics (performance, cost, reliability)",
+        "Explain what you learned from the failure and how it changed your approach",
+        "Add more detail about the hybrid architecture's benefits compared to the original plan"
+      ],
+      "elapsed_sec": 7.5,
+      "error": null
+    },
+    "semantic__v1_single": {
+      "retrieval_mode": "semantic",
+      "feedback_style": "v1_single",
+      "top_3_retrievals": [
+        {
+          "skill": "cross-functional collaboration",
+          "quality": "strong",
+          "similarity": 0.4177,
+          "text_preview": "I was leading a feature that required input from legal, design, and backend teams simultaneously. I ..."
+        },
+        {
+          "skill": "DevOps / deployment",
+          "quality": "strong",
+          "similarity": 0.4036,
+          "text_preview": "For zero-downtime deployments I use blue-green or canary strategies. In our CI/CD pipeline (GitHub A..."
+        },
+        {
+          "skill": "learning from failure",
+          "quality": "strong",
+          "similarity": 0.3917,
+          "text_preview": "I once shipped a pricing experiment without checking that our analytics SDK was correctly attributin..."
+        }
+      ],
+      "scores": {
+        "structure": 85,
+        "specificity": 70,
+        "impact": 75,
+        "relevance": 90,
+        "communication": 80
+      },
+      "feedback": "Strong STAR structure and good problem-solving approach, but needs more technical depth and quantified impact. Add specific metrics around event volume, team size, and business impact to make this more compelling.",
+      "strengths": [
+        "Clear chronological flow from problem identification to resolution",
+        "Shows ownership and proactive pause decision",
+        "Demonstrates learning mindset with retrospective",
+        "Solution has lasting value"
+      ],
+      "improvements": [
+        "Quantify the event volume numbers and scale",
+        "Specify what tools were involved in the migration",
+        "Add metrics on team size, budget, or business impact",
+        "Elaborate on what made the hybrid architecture successful"
+      ],
+      "elapsed_sec": 6.1,
+      "error": null
+    },
+    "semantic__v2_two_step": {
+      "retrieval_mode": "semantic",
+      "feedback_style": "v2_two_step",
+      "top_3_retrievals": [
+        {
+          "skill": "cross-functional collaboration",
+          "quality": "strong",
+          "similarity": 0.4177,
+          "text_preview": "I was leading a feature that required input from legal, design, and backend teams simultaneously. I ..."
+        },
+        {
+          "skill": "DevOps / deployment",
+          "quality": "strong",
+          "similarity": 0.4036,
+          "text_preview": "For zero-downtime deployments I use blue-green or canary strategies. In our CI/CD pipeline (GitHub A..."
+        },
+        {
+          "skill": "learning from failure",
+          "quality": "strong",
+          "similarity": 0.3917,
+          "text_preview": "I once shipped a pricing experiment without checking that our analytics SDK was correctly attributin..."
+        }
+      ],
+      "scores": {
+        "structure": 75,
+        "specificity": 70,
+        "impact": 60,
+        "relevance": 95,
+        "communication": 85
+      },
+      "feedback": "Your answer lacks quantifiable impact - you mention the solution 'is still running today' but don't specify business outcomes like performance improvements, cost savings, or reliability gains. Compare this to the strong DevOps example which includes specific metrics (5% traffic, 15 minutes monitoring, p99 latency) and measurable outcomes. Add concrete numbers about the event volume handled, system performance improvements, or business value delivered by your hybrid architecture.",
+      "strengths": [
+        "Clear problem identification and pivoting strategy",
+        "Good technical decision-making under pressure",
+        "Relevant senior-level project experience"
+      ],
+      "improvements": [
+        "Quantify the business impact with specific metrics (performance, cost, reliability)",
+        "Include measurable outcomes from the hybrid solution",
+        "Specify the scale of the problem (event volume numbers, team size, budget impact)"
+      ],
+      "elapsed_sec": 7.9,
+      "error": null
+    }
+  },
+  "comparisons": {
+    "retrieval_overlap_v2": {
+      "overlap_count": 1,
+      "jaccard": 0.2
+    },
+    "score_divergence_v1_vs_v2_semantic": {
+      "per_dim_abs_diff": {
+        "structure": 10,
+        "specificity": 0,
+        "impact": 15,
+        "relevance": 5,
+        "communication": 5
+      },
+      "mean_abs_diff": 7.0
+    }
+  }
+}

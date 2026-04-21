@@ -1,10 +1,44 @@
 """
-Interview Knowledge Base
-A curated set of example interview answers (strong and weak) across roles and skills.
-These are the documents indexed by the RAG engine.
+interview_kb.py
+───────────────
+Curated knowledge base of example interview answers across roles and skills.
+
+V3 UPDATE (Sprint 5):
+    Expanded from 20 to 35 examples. My V2 professor feedback explicitly asked
+    to "expand knowledge base". The additions target gaps I identified after
+    running the V3 evaluation harness:
+
+    1. More weak examples with varied failure modes — V2 was skewed toward
+       strong answers (16 strong vs 4 weak), which meant retrieval for the
+       "what to avoid" example often surfaced the same 2-3 docs regardless
+       of query.
+
+    2. Failure / learning-from-mistakes — under-covered in V2 (1 strong, 1 weak).
+       One of the most common behavioural interview categories.
+
+    3. Debugging / troubleshooting — missing entirely in V2. A staple of
+       technical interviews.
+
+    4. Role diversity — V2 was heavily biased toward product_manager,
+       software_engineer, data_scientist. Added marketing_analyst and
+       sales roles which are common on LinkedIn job postings.
+
+    5. Negotiation and difficult conversations — missing in V2.
+
+    6. Time management / competing deadlines — missing in V2.
+
+    7. Mentoring / developing others — missing in V2.
+
+    8. Customer focus / user empathy — missing in V2.
+
+    The original 20 V2 examples are preserved below the section divider.
 """
 
 KNOWLEDGE_BASE = [
+
+    # =======================================================================
+    # V2 KNOWLEDGE BASE — original 20 examples from v2 (unchanged)
+    # =======================================================================
 
     # ── BEHAVIOURAL: Conflict / Stakeholder Management ─────────────────────
     {
@@ -333,6 +367,285 @@ KNOWLEDGE_BASE = [
         "quality": "strong",
         "skill": "working with ambiguity",
         "why": "Structured problem decomposition, stakeholder alignment, measurable cleanup outcome.",
+    },
+
+    # =======================================================================
+    # V3 KB EXPANSION — 15 new examples added Sprint 5
+    # =======================================================================
+
+    # ── BEHAVIOURAL: Failure / Learning (V2 only had 2 — now 4) ────────────
+    {
+        "text": (
+            "I once shipped a pricing experiment without checking that our analytics "
+            "SDK was correctly attributing the new variant. Two weeks of data were "
+            "unusable. When I realised, I told the VP the same day, paused the "
+            "experiment, and wrote a short post-mortem identifying three preventable "
+            "root causes. We now have a pre-launch checklist that includes an "
+            "attribution dry run. I ran the same experiment correctly a month later "
+            "and it shipped with a 6% lift."
+        ),
+        "role": "product_manager",
+        "type": "behavioural",
+        "quality": "strong",
+        "skill": "learning from failure",
+        "why": "Owns mistake without defensiveness, fixes root cause systemically, shows follow-through.",
+    },
+    {
+        "text": (
+            "Honestly, my biggest weakness is that I work too hard and care too much "
+            "about my projects. Sometimes I need to remind myself to take breaks."
+        ),
+        "role": "product_manager",
+        "type": "behavioural",
+        "quality": "weak",
+        "skill": "learning from failure",
+        "why": "Textbook humble-brag non-answer. Interviewers see through this immediately.",
+    },
+
+    # ── BEHAVIOURAL: Negotiation / Difficult Conversations (new category) ──
+    {
+        "text": (
+            "A senior engineer on my team was consistently missing code review "
+            "turnaround targets, and junior engineers were blocked on him. Rather "
+            "than going to his manager, I had a direct 1:1 where I framed the impact "
+            "specifically: three PRs stalled for 4+ days in the last sprint. He "
+            "explained he was overloaded with architecture work. We agreed he would "
+            "delegate 50% of reviews to a rotation and flag his own capacity weekly. "
+            "Median review time dropped from 3.5 days to under 1 day within a month."
+        ),
+        "role": "engineering_manager",
+        "type": "behavioural",
+        "quality": "strong",
+        "skill": "difficult conversations",
+        "why": "Direct, data-grounded, preserves the relationship, concrete outcome measured.",
+    },
+    {
+        "text": (
+            "I avoid confrontation because I think it creates a bad atmosphere on "
+            "the team. If someone is underperforming I usually just do their work "
+            "to make sure things get done."
+        ),
+        "role": "engineering_manager",
+        "type": "behavioural",
+        "quality": "weak",
+        "skill": "difficult conversations",
+        "why": "Describes conflict avoidance, not management. Signals poor leadership judgment.",
+    },
+
+    # ── BEHAVIOURAL: Time Management / Competing Deadlines (new category) ──
+    {
+        "text": (
+            "In my last quarter I had three overlapping deadlines: a board deck, a "
+            "customer renewal doc, and a hiring panel I was chairing. I blocked two "
+            "hours each morning for the highest-stakes item (the board deck), used "
+            "afternoons for the renewal doc where I had input from others, and "
+            "delegated the hiring panel coordination to a teammate with context. I "
+            "renegotiated the renewal deadline by three days when I realised the "
+            "scope had grown. All three landed on time and the renewal closed at "
+            "112% of target."
+        ),
+        "role": "product_manager",
+        "type": "behavioural",
+        "quality": "strong",
+        "skill": "time management",
+        "why": "Concrete prioritisation logic, delegation, proactive renegotiation, quantified outcome.",
+    },
+    {
+        "text": (
+            "I am really good at multitasking and I can handle a lot of things at "
+            "once. I just work late if I need to get everything done."
+        ),
+        "role": "product_manager",
+        "type": "behavioural",
+        "quality": "weak",
+        "skill": "time management",
+        "why": "Mythologises 'multitasking' (which research shows reduces performance) and normalises overwork.",
+    },
+
+    # ── TECHNICAL: Debugging / Troubleshooting (new category) ──────────────
+    {
+        "text": (
+            "A customer reported random 500 errors on our API. I started with the "
+            "logs and saw the errors clustered around a single endpoint, all with "
+            "the same trace ID pattern. The stack traces pointed to a database "
+            "timeout, but only on queries that joined three specific tables. "
+            "I reproduced it locally with a payload from the failing request and "
+            "found the query plan was doing a full scan when the user had over ten "
+            "thousand records. I added a composite index, verified the plan changed "
+            "to an index seek, and deployed to staging first. Error rate dropped "
+            "from 0.8% to 0.01% within an hour of the prod deploy."
+        ),
+        "role": "software_engineer",
+        "type": "technical",
+        "quality": "strong",
+        "skill": "debugging",
+        "why": "Systematic approach: logs then hypothesis then reproduce then fix then verify then deploy safely.",
+    },
+    {
+        "text": (
+            "I usually restart the server first because that fixes most issues. "
+            "If that does not work I search Stack Overflow for the error message."
+        ),
+        "role": "software_engineer",
+        "type": "technical",
+        "quality": "weak",
+        "skill": "debugging",
+        "why": "No structured investigation, no hypothesis-testing, signals shallow technical depth.",
+    },
+
+    # ── TECHNICAL: Data Quality / Pipeline Issues ──────────────────────────
+    {
+        "text": (
+            "Our daily revenue dashboard started showing a 40% dip that did not "
+            "match finance's numbers. I traced back through the pipeline: raw events "
+            "were correct, the staging table was correct, but the aggregation job "
+            "was dropping rows where currency was null. A new payment provider had "
+            "started sending events without the currency field. I wrote a default-"
+            "to-USD fallback plus a monitoring alert that triggers if more than 1% "
+            "of events have null currency. The fix took 2 hours; the monitoring is "
+            "what prevents the next version of this bug."
+        ),
+        "role": "data_scientist",
+        "type": "technical",
+        "quality": "strong",
+        "skill": "data quality",
+        "why": "Root-cause investigation up the pipeline, fix AND prevention, systemic thinking.",
+    },
+
+    # ── BEHAVIOURAL: Mentoring / Developing Others (new category) ──────────
+    {
+        "text": (
+            "A junior data analyst on my team was great at SQL but struggled to "
+            "frame business questions. I paired with her on three projects: we "
+            "started each with a stakeholder interview where I modelled the "
+            "questions, then I gradually handed that role to her. By month three "
+            "she was independently running the intake for our marketing squad. Her "
+            "manager later told me two business leads specifically requested her "
+            "for their next analysis because her questions surfaced insights they "
+            "had not thought of."
+        ),
+        "role": "data_scientist",
+        "type": "behavioural",
+        "quality": "strong",
+        "skill": "mentoring",
+        "why": "Concrete mentoring pattern (model then co-do then hand off), external validation of outcome.",
+    },
+
+    # ── BEHAVIOURAL: Customer Focus / User Empathy (new category) ──────────
+    {
+        "text": (
+            "Customer support was flagging a spike in complaints about our export "
+            "feature. Rather than just reading the tickets I sat with three support "
+            "agents for 90 minutes each and watched them work. The pattern was clear: "
+            "customers were running multi-hour exports and the progress bar reset on "
+            "browser refresh, so they assumed the export had failed and retried. I "
+            "shipped a fix that persisted export state server-side and added an email "
+            "notification on completion. Related tickets dropped from 140 per week "
+            "to under 10 within a month."
+        ),
+        "role": "product_manager",
+        "type": "behavioural",
+        "quality": "strong",
+        "skill": "customer focus",
+        "why": "Goes beyond ticket reading, direct observation, fixes root cause not symptom.",
+    },
+
+    # ── MARKETING: Analytics / Campaign Measurement (new role) ─────────────
+    {
+        "text": (
+            "To measure our Q3 campaign effectiveness I combined three data sources: "
+            "paid media spend from our attribution tool, organic lift from a "
+            "geo-holdout test in three markets, and qualitative brand surveys before "
+            "and after the campaign. The paid media showed a 3.2x ROAS, but the "
+            "geo-holdout showed the true incremental ROAS was closer to 1.8x because "
+            "of significant organic cannibalisation. I presented both numbers to the "
+            "CMO and we reallocated 20% of Q4 spend toward brand channels where the "
+            "surveys showed we were under-indexing."
+        ),
+        "role": "marketing_analyst",
+        "type": "technical",
+        "quality": "strong",
+        "skill": "marketing measurement",
+        "why": "Triangulation of methods, honest about attribution limits, actionable reallocation.",
+    },
+    {
+        "text": (
+            "I look at the conversion numbers from Google Analytics and if they are "
+            "going up the campaign is working."
+        ),
+        "role": "marketing_analyst",
+        "type": "technical",
+        "quality": "weak",
+        "skill": "marketing measurement",
+        "why": "Ignores attribution, incrementality, seasonality, and confounding factors.",
+    },
+
+    # ── SALES: Closing / Negotiation (new role) ────────────────────────────
+    {
+        "text": (
+            "A mid-market deal was stalled in the legal review stage for six weeks. "
+            "Their general counsel had flagged three clauses but communication had "
+            "gone quiet. I proposed a 30-minute call with their GC plus our legal "
+            "lead, specifically framed as walking through the three clauses "
+            "together so we could close the remaining gaps the same day. We worked "
+            "through two of the three live and agreed redlines on the third within "
+            "48 hours. The deal closed at the original 180k ACV the next week."
+        ),
+        "role": "sales",
+        "type": "behavioural",
+        "quality": "strong",
+        "skill": "deal closing",
+        "why": "Proactive unblocking, specific framing that invites progress, concrete outcome.",
+    },
+
+    # ── BEHAVIOURAL: Saying No / Setting Boundaries (new category) ─────────
+    {
+        "text": (
+            "Our VP wanted my team to take on a side project that would have delayed "
+            "our Q2 roadmap by six weeks. Rather than just refusing, I built a "
+            "one-page impact analysis: the side project had an estimated 300k "
+            "upside, but the roadmap items we would delay had a combined 1.2M "
+            "pipeline attached to them. I proposed a lighter-weight version of the "
+            "side project that needed 30% of the effort and captured roughly 60% of "
+            "the upside. He agreed. Both landed on their revised timelines."
+        ),
+        "role": "product_manager",
+        "type": "behavioural",
+        "quality": "strong",
+        "skill": "prioritisation under pressure",
+        "why": "Says no with data, offers a constructive alternative, preserves the relationship.",
+    },
+
+    # ── TECHNICAL: Code Review / Technical Mentorship ──────────────────────
+    {
+        "text": (
+            "I follow two rules in code review: separate blocking from nitpick "
+            "comments explicitly, and always explain the why behind a blocking "
+            "comment. For example, on a recent PR a junior engineer used nested "
+            "loops on a list that could grow to 100k items. I did not just say "
+            "use a hash map. I commented with the O(n squared) vs O(n) impact at "
+            "our expected scale and linked a short internal doc. She refactored it, "
+            "and now uses the same pattern in her other PRs without being asked."
+        ),
+        "role": "software_engineer",
+        "type": "behavioural",
+        "quality": "strong",
+        "skill": "code review",
+        "why": "Specific review practice, teaches rather than dictates, shows lasting impact on mentee.",
+    },
+
+    # ── BEHAVIOURAL: Generic weak — tests weak-retrieval floor ─────────────
+    {
+        "text": (
+            "I think the most important skill for this role is being a team player "
+            "and having strong communication skills. I also believe passion and "
+            "dedication are really important."
+        ),
+        "role": "general",
+        "type": "behavioural",
+        "quality": "weak",
+        "skill": "generic platitudes",
+        "why": "Pure buzzword soup. Contains no information about the candidate.",
     },
 ]
 

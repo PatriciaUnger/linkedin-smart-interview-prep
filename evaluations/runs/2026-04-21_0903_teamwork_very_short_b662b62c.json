@@ -1,0 +1,206 @@
+{
+  "run_id": "b662b62c",
+  "timestamp_utc": "2026-04-21T09:03:20Z",
+  "model": "claude-sonnet-4-20250514",
+  "test_case": {
+    "id": "teamwork_very_short",
+    "question": "How do you approach working with a new team?",
+    "answer": "I think teamwork is really important and I always try to collaborate and communicate well.",
+    "job_title": "Software Engineer",
+    "question_type": "Behavioral",
+    "expected_skill": "teamwork",
+    "expected_quality_tier": "weak",
+    "notes": "Empty platitudes \u2014 tests whether the scorer correctly flags 'nothing concrete said'."
+  },
+  "variants": {
+    "tfidf__v1_single": {
+      "retrieval_mode": "tfidf",
+      "feedback_style": "v1_single",
+      "top_3_retrievals": [
+        {
+          "skill": "conflict resolution",
+          "quality": "strong",
+          "similarity": 0.0,
+          "text_preview": "In my previous role as a product manager, two engineering leads disagreed on the architecture for a ..."
+        },
+        {
+          "skill": "stakeholder alignment",
+          "quality": "strong",
+          "similarity": 0.0,
+          "text_preview": "During a product launch, the sales director wanted to delay by two weeks to align with a trade event..."
+        },
+        {
+          "skill": "process improvement",
+          "quality": "strong",
+          "similarity": 0.0,
+          "text_preview": "I noticed our sprint retrospectives were running over time and producing repetitive action items tha..."
+        }
+      ],
+      "scores": {
+        "structure": 15,
+        "specificity": 10,
+        "impact": 5,
+        "relevance": 40,
+        "communication": 30
+      },
+      "feedback": "Your answer lacks concrete examples and structure. Use the STAR method to describe a specific situation where you joined a new team, what actions you took, and what results you achieved. Replace generic terms like 'collaborate well' with specific behaviors and measurable outcomes.",
+      "strengths": [
+        "Shows awareness that teamwork matters",
+        "Mentions key concepts of collaboration and communication"
+      ],
+      "improvements": [
+        "Provide a specific example using STAR structure",
+        "Define what 'collaborate well' means with concrete actions",
+        "Include measurable results or outcomes",
+        "Avoid buzzwords and generic statements"
+      ],
+      "elapsed_sec": 6.32,
+      "error": null
+    },
+    "tfidf__v2_two_step": {
+      "retrieval_mode": "tfidf",
+      "feedback_style": "v2_two_step",
+      "top_3_retrievals": [
+        {
+          "skill": "conflict resolution",
+          "quality": "strong",
+          "similarity": 0.0,
+          "text_preview": "In my previous role as a product manager, two engineering leads disagreed on the architecture for a ..."
+        },
+        {
+          "skill": "stakeholder alignment",
+          "quality": "strong",
+          "similarity": 0.0,
+          "text_preview": "During a product launch, the sales director wanted to delay by two weeks to align with a trade event..."
+        },
+        {
+          "skill": "process improvement",
+          "quality": "strong",
+          "similarity": 0.0,
+          "text_preview": "I noticed our sprint retrospectives were running over time and producing repetitive action items tha..."
+        }
+      ],
+      "scores": {
+        "structure": 10,
+        "specificity": 15,
+        "impact": 5,
+        "relevance": 30,
+        "communication": 40
+      },
+      "feedback": "Your answer lacks impact entirely - there's no concrete example, measurable outcome, or demonstration of value you brought to a team. Compare this to the strong examples where candidates show specific results like 'shipped on time' or 'revenue exceeded forecast by 18%.' You need to tell a complete story using the STAR method with a real situation where you joined a new team and created measurable positive outcomes.",
+      "strengths": [
+        "Shows awareness that teamwork matters",
+        "Uses appropriate professional language"
+      ],
+      "improvements": [
+        "Add a specific example of joining a new team with concrete actions you took",
+        "Include measurable results or outcomes from your approach",
+        "Structure your answer using STAR (Situation, Task, Action, Result) format"
+      ],
+      "elapsed_sec": 7.78,
+      "error": null
+    },
+    "semantic__v1_single": {
+      "retrieval_mode": "semantic",
+      "feedback_style": "v1_single",
+      "top_3_retrievals": [
+        {
+          "skill": "conflict resolution",
+          "quality": "strong",
+          "similarity": 0.2346,
+          "text_preview": "In my previous role as a product manager, two engineering leads disagreed on the architecture for a ..."
+        },
+        {
+          "skill": "prioritisation",
+          "quality": "strong",
+          "similarity": 0.2317,
+          "text_preview": "I use a modified RICE framework for prioritisation. When I inherited the backlog at my last company ..."
+        },
+        {
+          "skill": "mentoring",
+          "quality": "strong",
+          "similarity": 0.1784,
+          "text_preview": "A junior data analyst on my team was great at SQL but struggled to frame business questions. I paire..."
+        }
+      ],
+      "scores": {
+        "structure": 10,
+        "specificity": 15,
+        "impact": 5,
+        "relevance": 40,
+        "communication": 25
+      },
+      "feedback": "Your answer is too generic and lacks substance - it reads like buzzword soup without any concrete examples or personal experience. You need to provide a specific situation where you joined a new team, describe your actual approach with concrete steps, and quantify the results you achieved.",
+      "strengths": [
+        "Mentions key concepts of collaboration and communication"
+      ],
+      "improvements": [
+        "Use STAR structure with a specific example",
+        "Describe concrete steps you take when joining new teams",
+        "Quantify outcomes and results",
+        "Show your unique approach rather than generic statements",
+        "Demonstrate self-awareness about team dynamics"
+      ],
+      "elapsed_sec": 5.76,
+      "error": null
+    },
+    "semantic__v2_two_step": {
+      "retrieval_mode": "semantic",
+      "feedback_style": "v2_two_step",
+      "top_3_retrievals": [
+        {
+          "skill": "conflict resolution",
+          "quality": "strong",
+          "similarity": 0.2346,
+          "text_preview": "In my previous role as a product manager, two engineering leads disagreed on the architecture for a ..."
+        },
+        {
+          "skill": "prioritisation",
+          "quality": "strong",
+          "similarity": 0.2317,
+          "text_preview": "I use a modified RICE framework for prioritisation. When I inherited the backlog at my last company ..."
+        },
+        {
+          "skill": "mentoring",
+          "quality": "strong",
+          "similarity": 0.1784,
+          "text_preview": "A junior data analyst on my team was great at SQL but struggled to frame business questions. I paire..."
+        }
+      ],
+      "scores": {
+        "structure": 5,
+        "specificity": 10,
+        "impact": 0,
+        "relevance": 25,
+        "communication": 40
+      },
+      "feedback": "Your answer completely lacks impact - you haven't shown any concrete results or outcomes from your teamwork approach. Compare this to the strong examples which demonstrate specific achievements like 'shipped on time' or 'reduced roadmap debates from 90 minutes to 20.' You need to share a real situation where your collaboration approach led to measurable results for the team or project.",
+      "strengths": [
+        "Shows awareness that teamwork matters"
+      ],
+      "improvements": [
+        "Add a specific example using STAR structure (Situation, Task, Action, Result)",
+        "Include quantifiable outcomes or impact from your teamwork",
+        "Replace generic phrases like 'communicate well' with concrete actions you took"
+      ],
+      "elapsed_sec": 7.55,
+      "error": null
+    }
+  },
+  "comparisons": {
+    "retrieval_overlap_v2": {
+      "overlap_count": 1,
+      "jaccard": 0.2
+    },
+    "score_divergence_v1_vs_v2_semantic": {
+      "per_dim_abs_diff": {
+        "structure": 5,
+        "specificity": 5,
+        "impact": 5,
+        "relevance": 15,
+        "communication": 15
+      },
+      "mean_abs_diff": 9.0
+    }
+  }
+}

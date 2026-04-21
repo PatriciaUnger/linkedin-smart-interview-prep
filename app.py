@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from rag_engine import RAGEngine
 from interview_kb import get_knowledge_base
 from chatbot import chat, opening_message
+from refine import refine_answer   
 import os
 
 st.set_page_config(
@@ -21,6 +22,14 @@ def load_rag_engine():
     return RAGEngine(get_knowledge_base(), mode="semantic")
 
 rag_engine = load_rag_engine()
+
+# ── V3: dev mode routing ──────────────────────────────────────────────────
+# If URL has ?dev=1, render the evaluation UI instead of the candidate app.
+# This keeps V2 (the candidate experience) unchanged and adds V3 alongside.
+if st.query_params.get("dev") == "1":
+    from dev_mode import render_dev_mode
+    render_dev_mode()
+    st.stop()
 
 st.markdown("""
 <style>
@@ -434,12 +443,119 @@ elif st.session_state["step"] == 3:
         st.plotly_chart(fig2, use_container_width=True)
 
         for i, a in enumerate(answers, 1):
-            score = a["score"]
+            # Show the most recent version's score as the headline, but keep
+            # the full revision history accessible below.
+            latest = a["revisions"][-1] if a.get("revisions") else a
+            score = latest["score"]
             color = "#16a34a" if score >= 75 else "#d97706" if score >= 50 else "#dc2626"
-            with st.expander(f"Q{i}: {a['question'][:70]}..."):
-                st.markdown(f"**Your answer:** {a['answer']}")
-                st.markdown(f"**Score:** <span style='color:{color};font-weight:600'>{score}/100</span>", unsafe_allow_html=True)
-                st.markdown(f"**Feedback:** {a['feedback']}")
+            rev_badge = f" · Refined ×{len(a['revisions'])}" if a.get("revisions") else ""
+
+            with st.expander(f"Q{i}: {a['question'][:70]}...{rev_badge}"):
+                # ── Original answer ─────────────────────────────────────────
+                st.markdown("**Original answer:**")
+                st.markdown(f"_{a['answer']}_")
+                st.markdown(
+                    f"**Original score:** <span style='color:{('#16a34a' if a['score']>=75 else '#d97706' if a['score']>=50 else '#dc2626')};font-weight:600'>{a['score']}/100</span>",
+                    unsafe_allow_html=True,
+                )
+                st.markdown(f"**Original feedback:** {a['feedback']}")
+
+                # ── Revision history (each revision side-by-side with the prior) ──
+                if a.get("revisions"):
+                    for r_idx, rev in enumerate(a["revisions"], 1):
+                        st.markdown("---")
+                        st.markdown(f"**Revision {r_idx}**")
+                        rc = "#16a34a" if rev["score"] >= 75 else "#d97706" if rev["score"] >= 50 else "#dc2626"
+                        delta = rev.get("overall_delta", 0)
+                        delta_color = "#16a34a" if delta > 0 else "#dc2626" if delta < 0 else "#666"
+                        delta_sign = f"{delta:+d}" if delta != 0 else "±0"
+                        st.markdown(f"_{rev['answer']}_")
+                        st.markdown(
+                            f"**Revised score:** <span style='color:{rc};font-weight:600'>{rev['score']}/100</span>"
+                            f" &nbsp; <span style='color:{delta_color};font-weight:600'>({delta_sign})</span>",
+                            unsafe_allow_html=True,
+                        )
+
+                        # Per-dimension delta chips
+                        deltas = rev.get("deltas", {})
+                        if deltas:
+                            chips = []
+                            for dim, d_val in deltas.items():
+                                if d_val > 0:
+                                    chips.append(f"<span style='background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:10px;font-size:11px;margin-right:4px;'>{dim} {d_val:+d}</span>")
+                                elif d_val < 0:
+                                    chips.append(f"<span style='background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:11px;margin-right:4px;'>{dim} {d_val:+d}</span>")
+                                else:
+                                    chips.append(f"<span style='background:#f1f5f9;color:#666;padding:2px 8px;border-radius:10px;font-size:11px;margin-right:4px;'>{dim} ±0</span>")
+                            st.markdown("".join(chips), unsafe_allow_html=True)
+
+                        if rev.get("summary_of_change"):
+                            st.markdown(
+                                f"<div style='background:#f8fafc;border-left:3px solid #0a66c2;padding:10px 12px;margin-top:8px;font-size:13px;'><strong>What changed:</strong> {rev['summary_of_change']}</div>",
+                                unsafe_allow_html=True,
+                            )
+
+                # ── Refine this answer ──────────────────────────────────────
+                st.markdown("---")
+                refine_key = f"refine_open_{i}"
+                text_key = f"refine_text_{i}"
+                if refine_key not in st.session_state:
+                    st.session_state[refine_key] = False
+
+                if not st.session_state[refine_key]:
+                    if st.button(f"✏️ Refine this answer", key=f"btn_open_{i}"):
+                        st.session_state[refine_key] = True
+                        st.rerun()
+                else:
+                    st.markdown("**Write a revised version of your answer:**")
+                    st.caption("Try addressing the specific feedback above. Add concrete numbers, use STAR structure, or cut the vague parts.")
+                    default_text = latest["answer"]
+                    revised = st.text_area(
+                        "Revised answer",
+                        value=default_text,
+                        height=160,
+                        key=text_key,
+                        label_visibility="collapsed",
+                    )
+                    col_submit, col_cancel = st.columns([1, 1])
+                    with col_submit:
+                        if st.button("Submit revision", key=f"btn_submit_{i}", type="primary", use_container_width=True):
+                            if revised.strip() and revised.strip() != latest["answer"].strip():
+                                with st.spinner("Re-scoring your revised answer..."):
+                                    try:
+                                        rev = refine_answer(
+                                            answer_idx=i - 1,
+                                            revised_text=revised,
+                                            job_title=st.session_state["job_title"],
+                                            keywords=st.session_state["keywords"],
+                                            rag_engine=rag_engine,
+                                        )
+                                        # Append to revisions list on the original answer
+                                        if "revisions" not in st.session_state["answers"][i - 1]:
+                                            st.session_state["answers"][i - 1]["revisions"] = []
+                                        st.session_state["answers"][i - 1]["revisions"].append(rev)
+
+                                        # Recompute overall score using the latest version of each answer
+                                        latest_scores = []
+                                        for a_obj in st.session_state["answers"]:
+                                            if a_obj.get("answer") == "[skipped]":
+                                                continue
+                                            last = a_obj["revisions"][-1] if a_obj.get("revisions") else a_obj
+                                            latest_scores.append(last["score"])
+                                        if latest_scores:
+                                            st.session_state["overall_score"] = round(sum(latest_scores) / len(latest_scores))
+
+                                        st.session_state[refine_key] = False
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"Could not re-score the revision: {e}")
+                            else:
+                                st.warning("Please write a different version of the answer.")
+                    with col_cancel:
+                        if st.button("Cancel", key=f"btn_cancel_{i}", use_container_width=True):
+                            st.session_state[refine_key] = False
+                            st.rerun()
+
 
     with tab3:
         st.caption("How did you come across? The AI reads all your answers together and builds a picture of you as a candidate — the same way an interviewer would.")

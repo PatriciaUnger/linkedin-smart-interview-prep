@@ -1,0 +1,211 @@
+{
+  "run_id": "4373a40d",
+  "timestamp_utc": "2026-04-21T09:04:57Z",
+  "model": "claude-sonnet-4-20250514",
+  "test_case": {
+    "id": "conflict_strong",
+    "question": "Tell me about a time you handled a disagreement between two team members.",
+    "answer": "Two engineers on my team disagreed about whether to refactor our auth module before a launch. I scheduled a 45-minute session where each presented their approach with explicit trade-offs on timeline, risk, and long-term maintainability. We ended up shipping the patch first and scheduling the refactor for the next sprint. Both engineers signed off and we launched on time.",
+    "job_title": "Engineering Manager",
+    "question_type": "Behavioral",
+    "expected_skill": "conflict resolution",
+    "expected_quality_tier": "strong",
+    "notes": "Baseline strong answer with clear vocab overlap to KB \u2014 both retrievers should do well."
+  },
+  "variants": {
+    "tfidf__v1_single": {
+      "retrieval_mode": "tfidf",
+      "feedback_style": "v1_single",
+      "top_3_retrievals": [
+        {
+          "skill": "conflict resolution",
+          "quality": "strong",
+          "similarity": 0.3194,
+          "text_preview": "In my previous role as a product manager, two engineering leads disagreed on the architecture for a ..."
+        },
+        {
+          "skill": "difficult conversations",
+          "quality": "strong",
+          "similarity": 0.0791,
+          "text_preview": "A senior engineer on my team was consistently missing code review turnaround targets, and junior eng..."
+        },
+        {
+          "skill": "cross-functional collaboration",
+          "quality": "strong",
+          "similarity": 0.0732,
+          "text_preview": "I was leading a feature that required input from legal, design, and backend teams simultaneously. I ..."
+        }
+      ],
+      "scores": {
+        "structure": 75,
+        "specificity": 80,
+        "impact": 70,
+        "relevance": 85,
+        "communication": 80
+      },
+      "feedback": "Strong technical example with clear process and outcome. To elevate this answer, add more detail about your facilitation approach and the human dynamics involved in the disagreement.",
+      "strengths": [
+        "Clear situation and concrete outcome",
+        "Shows structured problem-solving approach",
+        "Demonstrates compromise and stakeholder buy-in"
+      ],
+      "improvements": [
+        "Add more context about the initial disagreement dynamics",
+        "Explain specific facilitation techniques used during the session",
+        "Quantify the impact more precisely (timeline saved, risk mitigated)"
+      ],
+      "elapsed_sec": 4.88,
+      "error": null
+    },
+    "tfidf__v2_two_step": {
+      "retrieval_mode": "tfidf",
+      "feedback_style": "v2_two_step",
+      "top_3_retrievals": [
+        {
+          "skill": "conflict resolution",
+          "quality": "strong",
+          "similarity": 0.3194,
+          "text_preview": "In my previous role as a product manager, two engineering leads disagreed on the architecture for a ..."
+        },
+        {
+          "skill": "difficult conversations",
+          "quality": "strong",
+          "similarity": 0.0791,
+          "text_preview": "A senior engineer on my team was consistently missing code review turnaround targets, and junior eng..."
+        },
+        {
+          "skill": "cross-functional collaboration",
+          "quality": "strong",
+          "similarity": 0.0732,
+          "text_preview": "I was leading a feature that required input from legal, design, and backend teams simultaneously. I ..."
+        }
+      ],
+      "scores": {
+        "structure": 75,
+        "specificity": 80,
+        "impact": 70,
+        "relevance": 95,
+        "communication": 85
+      },
+      "feedback": "Your impact dimension is weakest at 70/100 because you only mention launching 'on time' without quantifying the business value or measuring the conflict resolution success. Like the strong example that shows 'median review time dropped from 3.5 days to under 1 day,' you should include specific metrics about timeline saved, team productivity gained, or follow-up on whether both engineers remained engaged after the decision.",
+      "strengths": [
+        "Clear structured approach with explicit trade-off analysis",
+        "Highly relevant example for engineering management",
+        "Good facilitation process that got buy-in from both parties"
+      ],
+      "improvements": [
+        "Quantify the impact - timeline saved, business value protected, or team satisfaction metrics",
+        "Include follow-up results showing the conflict resolution was durable",
+        "Specify what 'on time' means with actual dates or sprint goals"
+      ],
+      "elapsed_sec": 10.55,
+      "error": null
+    },
+    "semantic__v1_single": {
+      "retrieval_mode": "semantic",
+      "feedback_style": "v1_single",
+      "top_3_retrievals": [
+        {
+          "skill": "handling failure",
+          "quality": "strong",
+          "similarity": 0.42,
+          "text_preview": "I once underestimated the complexity of migrating our authentication system and committed to a two-w..."
+        },
+        {
+          "skill": "stakeholder alignment",
+          "quality": "strong",
+          "similarity": 0.408,
+          "text_preview": "During a product launch, the sales director wanted to delay by two weeks to align with a trade event..."
+        },
+        {
+          "skill": "leadership under pressure",
+          "quality": "strong",
+          "similarity": 0.399,
+          "text_preview": "When our team lead left unexpectedly three weeks before a major delivery, I volunteered to own the r..."
+        }
+      ],
+      "scores": {
+        "structure": 85,
+        "specificity": 75,
+        "impact": 70,
+        "relevance": 90,
+        "communication": 80
+      },
+      "feedback": "Strong answer with clear process and resolution, but could be enhanced by adding more context about the stakes and quantifying the positive outcomes. Consider explaining why this disagreement mattered to the project and what the results were beyond just 'launched on time.'",
+      "strengths": [
+        "Clear conflict resolution process",
+        "Structured approach with explicit trade-offs",
+        "Concrete outcome with team buy-in",
+        "Demonstrates leadership and facilitation skills"
+      ],
+      "improvements": [
+        "Add context about project importance and timeline pressure",
+        "Quantify the impact of the decision (technical debt avoided, time saved, etc.)",
+        "Explain how you ensured both engineers felt heard and valued",
+        "Mention any follow-up to validate the decision was correct"
+      ],
+      "elapsed_sec": 6.24,
+      "error": null
+    },
+    "semantic__v2_two_step": {
+      "retrieval_mode": "semantic",
+      "feedback_style": "v2_two_step",
+      "top_3_retrievals": [
+        {
+          "skill": "handling failure",
+          "quality": "strong",
+          "similarity": 0.42,
+          "text_preview": "I once underestimated the complexity of migrating our authentication system and committed to a two-w..."
+        },
+        {
+          "skill": "stakeholder alignment",
+          "quality": "strong",
+          "similarity": 0.408,
+          "text_preview": "During a product launch, the sales director wanted to delay by two weeks to align with a trade event..."
+        },
+        {
+          "skill": "leadership under pressure",
+          "quality": "strong",
+          "similarity": 0.399,
+          "text_preview": "When our team lead left unexpectedly three weeks before a major delivery, I volunteered to own the r..."
+        }
+      ],
+      "scores": {
+        "structure": 65,
+        "specificity": 75,
+        "impact": 70,
+        "relevance": 90,
+        "communication": 80
+      },
+      "feedback": "Your answer lacks the clear STAR structure that makes behavioral responses compelling. While you describe the situation and action well, you don't establish the stakes or context upfront, and you miss quantifying the impact. Compare this to the stakeholder alignment example which opens with clear context ('During a product launch'), shows competing priorities, then delivers a measurable outcome ('Revenue exceeded forecast by 18%').",
+      "strengths": [
+        "Clear conflict resolution process with structured discussion",
+        "Good focus on trade-offs analysis",
+        "Achieved consensus from both parties"
+      ],
+      "improvements": [
+        "Start with clearer context about why this disagreement mattered to the business",
+        "Quantify the impact - timeline saved, technical debt avoided, or team dynamics improved",
+        "Follow STAR structure more explicitly to make your leadership approach clearer"
+      ],
+      "elapsed_sec": 12.85,
+      "error": null
+    }
+  },
+  "comparisons": {
+    "retrieval_overlap_v2": {
+      "overlap_count": 0,
+      "jaccard": 0.0
+    },
+    "score_divergence_v1_vs_v2_semantic": {
+      "per_dim_abs_diff": {
+        "structure": 20,
+        "specificity": 0,
+        "impact": 0,
+        "relevance": 0,
+        "communication": 0
+      },
+      "mean_abs_diff": 4.0
+    }
+  }
+}

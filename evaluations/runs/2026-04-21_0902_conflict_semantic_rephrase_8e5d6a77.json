@@ -1,0 +1,211 @@
+{
+  "run_id": "8e5d6a77",
+  "timestamp_utc": "2026-04-21T09:01:45Z",
+  "model": "claude-sonnet-4-20250514",
+  "test_case": {
+    "id": "conflict_semantic_rephrase",
+    "question": "Describe a situation where you had to bring opposing viewpoints together.",
+    "answer": "Our design and engineering leads had incompatible views on whether to prioritise pixel-perfect fidelity or shipping velocity. I facilitated a workshop where we mapped each feature to a 2x2 of user impact vs build cost, and we converged on a phased plan. Both sides felt heard and the roadmap shipped on schedule.",
+    "job_title": "Product Manager",
+    "question_type": "Behavioral",
+    "expected_skill": "conflict resolution",
+    "expected_quality_tier": "strong",
+    "notes": "ADVERSARIAL: the answer is about conflict resolution but never uses the word 'conflict' or 'disagreement'. TF-IDF is expected to miss the best KB matches; semantic is expected to find them."
+  },
+  "variants": {
+    "tfidf__v1_single": {
+      "retrieval_mode": "tfidf",
+      "feedback_style": "v1_single",
+      "top_3_retrievals": [
+        {
+          "skill": "stakeholder alignment",
+          "quality": "strong",
+          "similarity": 0.1924,
+          "text_preview": "During a product launch, the sales director wanted to delay by two weeks to align with a trade event..."
+        },
+        {
+          "skill": "conflict resolution",
+          "quality": "strong",
+          "similarity": 0.1764,
+          "text_preview": "In my previous role as a product manager, two engineering leads disagreed on the architecture for a ..."
+        },
+        {
+          "skill": "machine learning",
+          "quality": "strong",
+          "similarity": 0.0742,
+          "text_preview": "To detect fraudulent transactions I would start with a gradient-boosted model trained on historical ..."
+        }
+      ],
+      "scores": {
+        "structure": 75,
+        "specificity": 80,
+        "impact": 70,
+        "relevance": 95,
+        "communication": 85
+      },
+      "feedback": "Strong answer that demonstrates clear facilitation skills and a structured approach to conflict resolution. To make it even stronger, add specific metrics about the outcome and explain your role more explicitly in driving the resolution.",
+      "strengths": [
+        "Clear conflict situation with specific stakeholders",
+        "Concrete facilitation method (2x2 mapping workshop)",
+        "Shows both sides felt heard",
+        "Delivered measurable outcome (shipped on schedule)"
+      ],
+      "improvements": [
+        "Add more detail about your specific role in facilitating",
+        "Include quantified impact metrics beyond just timeline",
+        "Explain the 'phased plan' solution in more detail"
+      ],
+      "elapsed_sec": 5.7,
+      "error": null
+    },
+    "tfidf__v2_two_step": {
+      "retrieval_mode": "tfidf",
+      "feedback_style": "v2_two_step",
+      "top_3_retrievals": [
+        {
+          "skill": "stakeholder alignment",
+          "quality": "strong",
+          "similarity": 0.1924,
+          "text_preview": "During a product launch, the sales director wanted to delay by two weeks to align with a trade event..."
+        },
+        {
+          "skill": "conflict resolution",
+          "quality": "strong",
+          "similarity": 0.1764,
+          "text_preview": "In my previous role as a product manager, two engineering leads disagreed on the architecture for a ..."
+        },
+        {
+          "skill": "machine learning",
+          "quality": "strong",
+          "similarity": 0.0742,
+          "text_preview": "To detect fraudulent transactions I would start with a gradient-boosted model trained on historical ..."
+        }
+      ],
+      "scores": {
+        "structure": 65,
+        "specificity": 70,
+        "impact": 60,
+        "relevance": 85,
+        "communication": 75
+      },
+      "feedback": "Your impact dimension is weakest at 60/100 because you only mention 'shipped on schedule' without quantifying the business results. The strong example shows measurable outcomes like '18% revenue increase' or specific deliverables like 'shipped on time with hybrid solution.' Add concrete metrics about user adoption, cost savings, or timeline improvements to demonstrate the real business value of your facilitation.",
+      "strengths": [
+        "Clear conflict identification between design and engineering",
+        "Practical facilitation approach with 2x2 mapping framework",
+        "Shows both sides felt heard in the process"
+      ],
+      "improvements": [
+        "Quantify the business impact with specific metrics (revenue, user engagement, cost savings)",
+        "Specify timeline - how long did the workshop take and what was the original vs actual delivery date",
+        "Add more detail about the phased plan outcomes and stakeholder satisfaction"
+      ],
+      "elapsed_sec": 7.87,
+      "error": null
+    },
+    "semantic__v1_single": {
+      "retrieval_mode": "semantic",
+      "feedback_style": "v1_single",
+      "top_3_retrievals": [
+        {
+          "skill": "prioritisation under pressure",
+          "quality": "strong",
+          "similarity": 0.49,
+          "text_preview": "Our VP wanted my team to take on a side project that would have delayed our Q2 roadmap by six weeks...."
+        },
+        {
+          "skill": "conflict resolution",
+          "quality": "strong",
+          "similarity": 0.4865,
+          "text_preview": "In my previous role as a product manager, two engineering leads disagreed on the architecture for a ..."
+        },
+        {
+          "skill": "stakeholder alignment",
+          "quality": "strong",
+          "similarity": 0.4642,
+          "text_preview": "During a product launch, the sales director wanted to delay by two weeks to align with a trade event..."
+        }
+      ],
+      "scores": {
+        "structure": 75,
+        "specificity": 70,
+        "impact": 80,
+        "relevance": 95,
+        "communication": 85
+      },
+      "feedback": "Strong answer that demonstrates clear conflict resolution skills with a concrete framework (2x2 mapping) and measurable outcome. To elevate further, add more specific details about the situation setup and quantify the business impact beyond just 'shipped on schedule.'",
+      "strengths": [
+        "Clear framework used (2x2 mapping)",
+        "Shows facilitation skills",
+        "Demonstrates both sides felt heard",
+        "Concrete outcome achieved"
+      ],
+      "improvements": [
+        "Add more context about the stakes/timeline pressure",
+        "Quantify business impact with specific metrics",
+        "Include brief mention of follow-up or lessons learned"
+      ],
+      "elapsed_sec": 6.31,
+      "error": null
+    },
+    "semantic__v2_two_step": {
+      "retrieval_mode": "semantic",
+      "feedback_style": "v2_two_step",
+      "top_3_retrievals": [
+        {
+          "skill": "prioritisation under pressure",
+          "quality": "strong",
+          "similarity": 0.49,
+          "text_preview": "Our VP wanted my team to take on a side project that would have delayed our Q2 roadmap by six weeks...."
+        },
+        {
+          "skill": "conflict resolution",
+          "quality": "strong",
+          "similarity": 0.4865,
+          "text_preview": "In my previous role as a product manager, two engineering leads disagreed on the architecture for a ..."
+        },
+        {
+          "skill": "stakeholder alignment",
+          "quality": "strong",
+          "similarity": 0.4642,
+          "text_preview": "During a product launch, the sales director wanted to delay by two weeks to align with a trade event..."
+        }
+      ],
+      "scores": {
+        "structure": 65,
+        "specificity": 70,
+        "impact": 75,
+        "relevance": 90,
+        "communication": 80
+      },
+      "feedback": "Your answer lacks the clear STAR structure that makes behavioral responses compelling. Compare to the strong conflict resolution example which explicitly walks through Situation (engineering leads disagreeing), Task (need alignment), Action (structured workshop with decision matrix), and Result (shipped on time). You jump straight into the solution without setting up the context or quantifying the specific outcome.",
+      "strengths": [
+        "Shows strong facilitation skills",
+        "Demonstrates practical framework usage (2x2 matrix)",
+        "Relevant PM conflict resolution scenario"
+      ],
+      "improvements": [
+        "Use STAR structure - set up the situation and stakes before describing your actions",
+        "Quantify the outcome more specifically than 'shipped on schedule'",
+        "Provide more context about the initial disagreement and timeline pressures"
+      ],
+      "elapsed_sec": 9.23,
+      "error": null
+    }
+  },
+  "comparisons": {
+    "retrieval_overlap_v2": {
+      "overlap_count": 2,
+      "jaccard": 0.5
+    },
+    "score_divergence_v1_vs_v2_semantic": {
+      "per_dim_abs_diff": {
+        "structure": 10,
+        "specificity": 0,
+        "impact": 5,
+        "relevance": 5,
+        "communication": 5
+      },
+      "mean_abs_diff": 5.0
+    }
+  }
+}

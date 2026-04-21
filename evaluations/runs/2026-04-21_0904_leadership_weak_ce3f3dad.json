@@ -1,0 +1,205 @@
+{
+  "run_id": "ce3f3dad",
+  "timestamp_utc": "2026-04-21T09:03:57Z",
+  "model": "claude-sonnet-4-20250514",
+  "test_case": {
+    "id": "leadership_weak",
+    "question": "Give me an example of when you took initiative without being asked.",
+    "answer": "I am a very proactive and driven person and I always go the extra mile for my team. People often say I'm a natural leader.",
+    "job_title": "Senior Software Engineer",
+    "question_type": "Behavioral",
+    "expected_skill": "leadership",
+    "expected_quality_tier": "weak",
+    "notes": "Generic claims, zero evidence. Should trigger the 'vague language' weak KB example."
+  },
+  "variants": {
+    "tfidf__v1_single": {
+      "retrieval_mode": "tfidf",
+      "feedback_style": "v1_single",
+      "top_3_retrievals": [
+        {
+          "skill": "code review",
+          "quality": "strong",
+          "similarity": 0.0604,
+          "text_preview": "I follow two rules in code review: separate blocking from nitpick comments explicitly, and always ex..."
+        },
+        {
+          "skill": "leadership under pressure",
+          "quality": "strong",
+          "similarity": 0.0204,
+          "text_preview": "When our team lead left unexpectedly three weeks before a major delivery, I volunteered to own the r..."
+        },
+        {
+          "skill": "handling failure",
+          "quality": "strong",
+          "similarity": 0.0199,
+          "text_preview": "I once underestimated the complexity of migrating our authentication system and committed to a two-w..."
+        }
+      ],
+      "scores": {
+        "structure": 15,
+        "specificity": 10,
+        "impact": 5,
+        "relevance": 20,
+        "communication": 25
+      },
+      "feedback": "Your answer lacks the concrete example the interviewer requested and reads more like self-promotion than evidence of initiative. You need to restructure using the STAR method (Situation, Task, Action, Result) with a specific scenario that demonstrates taking initiative without being asked.",
+      "strengths": [
+        "Shows confidence in leadership abilities"
+      ],
+      "improvements": [
+        "Provide a specific example with context and situation",
+        "Include concrete actions you took",
+        "Quantify the results and impact",
+        "Follow behavioral interview structure (STAR method)",
+        "Replace generic claims with evidence-based storytelling"
+      ],
+      "elapsed_sec": 4.88,
+      "error": null
+    },
+    "tfidf__v2_two_step": {
+      "retrieval_mode": "tfidf",
+      "feedback_style": "v2_two_step",
+      "top_3_retrievals": [
+        {
+          "skill": "code review",
+          "quality": "strong",
+          "similarity": 0.0604,
+          "text_preview": "I follow two rules in code review: separate blocking from nitpick comments explicitly, and always ex..."
+        },
+        {
+          "skill": "leadership under pressure",
+          "quality": "strong",
+          "similarity": 0.0204,
+          "text_preview": "When our team lead left unexpectedly three weeks before a major delivery, I volunteered to own the r..."
+        },
+        {
+          "skill": "handling failure",
+          "quality": "strong",
+          "similarity": 0.0199,
+          "text_preview": "I once underestimated the complexity of migrating our authentication system and committed to a two-w..."
+        }
+      ],
+      "scores": {
+        "structure": 5,
+        "specificity": 10,
+        "impact": 0,
+        "relevance": 15,
+        "communication": 25
+      },
+      "feedback": "Your answer lacks any measurable impact or outcome, which is the weakest dimension here. Compare this to the strong leadership example where the candidate delivered 'on the original date with zero critical bugs' - you need to show concrete results from your initiative. Move beyond personality traits to describe a specific situation where you took action and what measurable difference it made.",
+      "strengths": [
+        "Shows self-awareness about being proactive"
+      ],
+      "improvements": [
+        "Provide a specific example with concrete situation and context",
+        "Quantify the impact and outcomes of your initiative",
+        "Focus on what you did rather than personality traits"
+      ],
+      "elapsed_sec": 6.89,
+      "error": null
+    },
+    "semantic__v1_single": {
+      "retrieval_mode": "semantic",
+      "feedback_style": "v1_single",
+      "top_3_retrievals": [
+        {
+          "skill": "mentoring",
+          "quality": "strong",
+          "similarity": 0.2869,
+          "text_preview": "A junior data analyst on my team was great at SQL but struggled to frame business questions. I paire..."
+        },
+        {
+          "skill": "prioritisation",
+          "quality": "strong",
+          "similarity": 0.2726,
+          "text_preview": "I use a modified RICE framework for prioritisation. When I inherited the backlog at my last company ..."
+        },
+        {
+          "skill": "working with ambiguity",
+          "quality": "strong",
+          "similarity": 0.1913,
+          "text_preview": "When I joined, the company had no clear definition of 'active user'. Different teams were using four..."
+        }
+      ],
+      "scores": {
+        "structure": 15,
+        "specificity": 10,
+        "impact": 5,
+        "relevance": 20,
+        "communication": 30
+      },
+      "feedback": "This answer completely lacks the STAR structure and provides no concrete example. You need to describe a specific situation where you took initiative, the actions you took, and the measurable results you achieved.",
+      "strengths": [
+        "Shows confidence in leadership abilities"
+      ],
+      "improvements": [
+        "Provide a specific situation with context",
+        "Detail the exact actions you took without being asked",
+        "Quantify the results and impact of your initiative",
+        "Use the STAR method to structure your response",
+        "Replace generic claims with concrete evidence"
+      ],
+      "elapsed_sec": 4.81,
+      "error": null
+    },
+    "semantic__v2_two_step": {
+      "retrieval_mode": "semantic",
+      "feedback_style": "v2_two_step",
+      "top_3_retrievals": [
+        {
+          "skill": "mentoring",
+          "quality": "strong",
+          "similarity": 0.2869,
+          "text_preview": "A junior data analyst on my team was great at SQL but struggled to frame business questions. I paire..."
+        },
+        {
+          "skill": "prioritisation",
+          "quality": "strong",
+          "similarity": 0.2726,
+          "text_preview": "I use a modified RICE framework for prioritisation. When I inherited the backlog at my last company ..."
+        },
+        {
+          "skill": "working with ambiguity",
+          "quality": "strong",
+          "similarity": 0.1913,
+          "text_preview": "When I joined, the company had no clear definition of 'active user'. Different teams were using four..."
+        }
+      ],
+      "scores": {
+        "structure": 5,
+        "specificity": 10,
+        "impact": 0,
+        "relevance": 15,
+        "communication": 30
+      },
+      "feedback": "Your answer completely lacks impact - you haven't shown any measurable outcome or result from your initiative. Compare this to the strong mentoring example where the candidate demonstrated clear progression (junior analyst went from struggling to being specifically requested by business leads) and external validation. You need to replace generic self-descriptions with a specific situation where you took initiative and can quantify the positive impact it had on your team or project.",
+      "strengths": [
+        "Shows confidence in leadership abilities"
+      ],
+      "improvements": [
+        "Provide a specific example with measurable outcomes",
+        "Structure answer with situation-action-result format",
+        "Replace generic self-praise with concrete evidence of impact"
+      ],
+      "elapsed_sec": 7.78,
+      "error": null
+    }
+  },
+  "comparisons": {
+    "retrieval_overlap_v2": {
+      "overlap_count": 0,
+      "jaccard": 0.0
+    },
+    "score_divergence_v1_vs_v2_semantic": {
+      "per_dim_abs_diff": {
+        "structure": 10,
+        "specificity": 0,
+        "impact": 5,
+        "relevance": 5,
+        "communication": 0
+      },
+      "mean_abs_diff": 4.0
+    }
+  }
+}
