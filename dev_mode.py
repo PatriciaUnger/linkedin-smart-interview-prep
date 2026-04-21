@@ -20,6 +20,7 @@ import plotly.graph_objects as go
 
 from eval_testset import get_test_set
 from eval_harness import run_evaluation
+from user_votes import vote_summary, load_all_votes
 from eval_storage import save_run, load_all_runs, delete_run
 
 
@@ -223,6 +224,41 @@ def render_analytics():
         return
 
     st.markdown(f"**{len(runs)} run(s) loaded from disk.**")
+   
+    # ── V3: user vote aggregates ──────────────────────────────────────────
+    votes = load_all_votes()
+    if votes:
+        summary = vote_summary()
+        st.markdown("---")
+        st.markdown("##### User votes on feedback fairness")
+        st.caption(
+            "Votes collected during normal candidate use. 'Does this feedback feel "
+            "fair to you?' — with an optional comment on the 'not really' path."
+        )
+        col_a, col_b, col_c = st.columns(3)
+        col_a.metric("Total votes", summary["total"])
+        col_b.metric("Felt fair", f"{summary['up']}  ({summary['up_pct']}%)")
+        col_c.metric("Felt off", summary["down"])
+
+        # Show the down-vote comments — these are gold for the 2-pager
+        down_with_comments = [v for v in votes if not v.get("helpful") and v.get("comment", "").strip()]
+        if down_with_comments:
+            st.markdown("**What candidates said felt off:**")
+            for v in down_with_comments[-5:]:   # show most recent 5
+                st.markdown(
+                    f'<div style="padding:8px 12px;background:#fffbeb;border-left:3px solid #d97706;'
+                    f'border-radius:4px;margin-bottom:6px;font-size:13px;color:#854d0e;">'
+                    f'<em>"{v["comment"]}"</em> '
+                    f'<span style="color:#999;font-size:11px;">— on a {v.get("score","?")}/100 answer</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+        st.caption(
+            f"With N={summary['total']}, these numbers are directional. They address the "
+            f"professor's V2 suggestion to let users vote, without pretending N=4 is a study."
+        )
+        st.markdown("---")
 
     # ── Run-by-run summary table ──
     st.markdown("##### Per-run summary")

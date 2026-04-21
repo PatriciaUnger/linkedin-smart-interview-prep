@@ -7,6 +7,7 @@ from rag_engine import RAGEngine
 from interview_kb import get_knowledge_base
 from chatbot import chat, opening_message
 from refine import refine_answer   
+from user_votes import save_vote, update_vote_comment
 import os
 
 st.set_page_config(
@@ -374,6 +375,107 @@ elif st.session_state["step"] == 2:
                     with st.expander("View examples used for feedback"):
                         st.caption(entry["rag_context_used"])
 
+                    # ── V3: pedagogical vote on feedback fairness ────────────────
+                    q_idx = st.session_state["current_q"]
+                    vote_state_key = f"vote_state_q{q_idx}"
+                    vote_id_key    = f"vote_id_q{q_idx}"
+                    comment_key    = f"vote_comment_q{q_idx}"
+
+                    if vote_state_key not in st.session_state:
+                        st.session_state[vote_state_key] = None
+
+                    state = st.session_state[vote_state_key]
+
+                    st.markdown("""
+                    <div style="margin-top:22px;padding:12px 16px;background:#f8fafc;border-radius:8px;
+                                border-left:3px solid #0a66c2;">
+                      <div style="font-size:13px;color:#475569;font-weight:500;margin-bottom:6px;">
+                        Does this feedback feel fair to you?
+                      </div>
+                      <div style="font-size:12px;color:#64748b;line-height:1.5;">
+                        Your reaction helps us improve the coaching for the next candidate.
+                      </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    if state is None:
+                        col_up, col_down, _ = st.columns([1, 1, 3])
+                        with col_up:
+                            if st.button("👍 Yes, fair", key=f"vote_up_{q_idx}", use_container_width=True):
+                                try:
+                                    _, vid = save_vote(
+                                        question=entry["question"],
+                                        answer=entry["answer"],
+                                        score=entry["score"],
+                                        helpful=True,
+                                        job_title=st.session_state.get("job_title", ""),
+                                        q_type=entry.get("type", ""),
+                                    )
+                                    st.session_state[vote_id_key] = vid
+                                    st.session_state[vote_state_key] = "up"
+                                    st.rerun()
+                                except Exception:
+                                    st.error("Could not save your reaction.")
+                        with col_down:
+                            if st.button("👎 Not really", key=f"vote_down_{q_idx}", use_container_width=True):
+                                try:
+                                    _, vid = save_vote(
+                                        question=entry["question"],
+                                        answer=entry["answer"],
+                                        score=entry["score"],
+                                        helpful=False,
+                                        job_title=st.session_state.get("job_title", ""),
+                                        q_type=entry.get("type", ""),
+                                    )
+                                    st.session_state[vote_id_key] = vid
+                                    st.session_state[vote_state_key] = "down"
+                                    st.rerun()
+                                except Exception:
+                                    st.error("Could not save your reaction.")
+
+                    elif state == "up":
+                        st.markdown(
+                            '<div style="padding:10px 14px;background:#f0fdf4;border-radius:6px;'
+                            'border-left:3px solid #16a34a;font-size:13px;color:#15803d;">'
+                            'Thanks. Noted as useful feedback.'
+                            '</div>',
+                            unsafe_allow_html=True,
+                        )
+
+                    elif state == "down":
+                        st.markdown(
+                            '<div style="padding:10px 14px;background:#fffbeb;border-radius:6px;'
+                            'border-left:3px solid #d97706;font-size:13px;color:#854d0e;margin-bottom:8px;">'
+                            'Thanks for the honest reaction. What felt off? (Optional. Takes 10 seconds and helps you reflect on what you were actually looking for.)'
+                            '</div>',
+                            unsafe_allow_html=True,
+                        )
+                        comment = st.text_area(
+                            "What felt off?",
+                            key=comment_key,
+                            placeholder="e.g. the feedback missed my main point, or it was too generic, or it misread what I meant...",
+                            label_visibility="collapsed",
+                            height=70,
+                        )
+                        c1, _ = st.columns([1, 3])
+                        with c1:
+                            if st.button("Submit", key=f"vote_comment_submit_{q_idx}"):
+                                if comment.strip():
+                                    update_vote_comment(st.session_state.get(vote_id_key, ""), comment.strip())
+                                st.session_state[vote_state_key] = "down_commented"
+                                st.rerun()
+
+                    elif state == "down_commented":
+                        st.markdown(
+                            '<div style="padding:10px 14px;background:#f8fafc;border-radius:6px;'
+                            'border-left:3px solid #64748b;font-size:13px;color:#475569;">'
+                            'Thanks. Reflecting on what you wanted is often more useful than the feedback itself.'
+                            '</div>',
+                            unsafe_allow_html=True,
+                        )
+
+                    st.markdown("<div style='margin-top:14px'></div>", unsafe_allow_html=True)
+
                     if st.button("Next question →", type="primary"):
                         st.session_state["current_q"] += 1
                         if st.session_state["current_q"] >= total:
@@ -381,6 +483,7 @@ elif st.session_state["step"] == 2:
                             st.session_state["overall_score"] = round(sum(scores)/len(scores)) if scores else 0
                             st.session_state["step"] = 3
                         st.rerun()
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # STEP 3 — Report
